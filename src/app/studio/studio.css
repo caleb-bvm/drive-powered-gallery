@@ -207,6 +207,8 @@ td.t{white-space:nowrap;color:var(--mute);font-variant-numeric:tabular-nums}
 .login{min-height:100svh;display:grid;place-items:center;padding:24px}
 .login .sheet{width:min(420px,100%)}
 .login form{display:grid;gap:12px;margin-top:18px}
+.login .or{display:flex;align-items:center;gap:12px;margin:20px 0 -4px;color:var(--mute)}
+.login .or::before,.login .or::after{content:"";flex:1;border-top:1px solid;border-color:var(--line)}
 .logout{background:none;border:0;color:var(--mute);font-size:14px;padding:8px}
 .logout:hover{color:var(--ink)}
 .topacts{display:flex;align-items:center;gap:6px}

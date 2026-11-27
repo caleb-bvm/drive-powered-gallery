@@ -1,5 +1,5 @@
 import { redirect } from 'next/navigation';
-import { authMode, getAdmin } from '@/lib/admin';
+import { authMethods, getAdmin } from '@/lib/admin';
 import { devLogin } from '../actions';
 import { PasswordForm } from '@/components/studio/PasswordForm';
 
@@ -14,7 +14,7 @@ const ERRORS: Record<string, string> = {
 export default async function Login({ searchParams }: { searchParams: Promise<{ e?: string }> }) {
   if (await getAdmin()) redirect('/studio');
   const { e } = await searchParams;
-  const mode = authMode();
+  const on = authMethods();
   return (
     <main className="login">
       <div className="sheet">
@@ -23,13 +23,14 @@ export default async function Login({ searchParams }: { searchParams: Promise<{ 
           Michael&apos;s Gallery, private.
         </p>
         {e && ERRORS[e] && <p className="err">{ERRORS[e]}</p>}
-        {mode === 'google' && (
+        {on.google && (
           <a className="pill solid" href="/api/auth/google" style={{ width: '100%', justifyContent: 'center', marginTop: 18 }}>
             Sign in with Google
           </a>
         )}
-        {mode === 'password' && <PasswordForm />}
-        {mode === 'dev' && (
+        {on.google && on.password && <p className="or small">or with the Studio password</p>}
+        {on.password && <PasswordForm autoFocus={!on.google} />}
+        {on.dev && (
           <form action={devLogin}>
             <p className="small">Development mode: no Google client or password is configured yet.</p>
             <button className="pill solid" type="submit" style={{ width: '100%', justifyContent: 'center' }}>
@@ -37,7 +38,9 @@ export default async function Login({ searchParams }: { searchParams: Promise<{ 
             </button>
           </form>
         )}
-        {mode === 'none' && <p className="err">Sign-in is not configured. Set GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET.</p>}
+        {!on.google && !on.password && !on.dev && (
+          <p className="err">Sign-in is not configured. Set ADMIN_PASSWORD, or GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET.</p>
+        )}
       </div>
     </main>
   );

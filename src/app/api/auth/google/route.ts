@@ -1,10 +1,10 @@
 import crypto from 'node:crypto';
 import { cookies } from 'next/headers';
 import { env } from '@/lib/env';
-import { authMode } from '@/lib/admin';
+import { authMethods } from '@/lib/admin';
 
 export async function GET() {
-  if (authMode() !== 'google') return new Response('Google sign-in is not configured', { status: 404 });
+  if (!authMethods().google) return new Response('Google sign-in is not configured', { status: 404 });
   const state = crypto.randomBytes(16).toString('base64url');
   (await cookies()).set('mg_oauth', state, { httpOnly: true, secure: env.isProd, sameSite: 'lax', path: '/', maxAge: 600 });
   const q = new URLSearchParams({

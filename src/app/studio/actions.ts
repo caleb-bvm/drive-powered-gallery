@@ -4,7 +4,7 @@ import { after } from 'next/server';
 import { redirect } from 'next/navigation';
 import { revalidatePath } from 'next/cache';
 import sharp from 'sharp';
-import { requireAdmin, authMode, passwordMatches, setAdmin, clearAdmin } from '@/lib/admin';
+import { requireAdmin, authMethods, passwordMatches, setAdmin, clearAdmin } from '@/lib/admin';
 import { getDrive } from '@/lib/drive';
 import {
   closeAlbum,
@@ -29,6 +29,8 @@ import { getDb, schema } from '@/lib/db';
 import { getStore, mediaKey } from '@/lib/storage';
 import { randomId } from '@/lib/crypto';
 import { env } from '@/lib/env';
+import { clientIp } from '@/lib/request';
+import { isBlocked, recordAttempt } from '@/lib/ratelimit';
 
 type Result<T = object> = ({ ok: true } & T) | { ok: false; error: string };
 
@@ -41,16 +43,22 @@ const fail = (e: unknown): { ok: false; error: string } => {
 /* ---- sign-in ----------------------------------------------------------- */
 
 export async function passwordLogin(_: unknown, form: FormData): Promise<{ error: string } | undefined> {
-  if (authMode() !== 'password') return { error: 'Password sign-in is off.' };
+  if (!authMethods().password) return { error: 'Password sign-in is off.' };
+  // Same throttle as access codes, kept per IP: 5 wrong tries in 15 minutes
+  const ip = await clientIp();
+  const key = `studio:${ip}`;
+  if (await isBlocked(key, key)) return { error: 'Too many tries. Wait 15 minutes and try again.' };
   await new Promise((r) => setTimeout(r, 400));
-  if (!passwordMatches(String(form.get('password') ?? ''))) return { error: 'Wrong password.' };
-  await setAdmin(env.adminEmails[0] ?? 'admin');
+  const ok = passwordMatches(String(form.get('password') ?? ''));
+  await recordAttempt(key, key, ok);
+  if (!ok) return { error: 'Wrong password.' };
+  await setAdmin(env.adminEmails[0] ?? 'admin', 'password');
   redirect('/studio');
 }
 
 export async function devLogin() {
-  if (authMode() !== 'dev') return;
-  await setAdmin('dev@localhost');
+  if (!authMethods().dev) return;
+  await setAdmin('dev@localhost', 'dev');
   redirect('/studio');
 }
 

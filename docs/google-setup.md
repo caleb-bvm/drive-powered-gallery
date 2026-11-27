@@ -157,8 +157,20 @@ GOOGLE_CLIENT_ID=1234567890-abc.apps.googleusercontent.com
 GOOGLE_CLIENT_SECRET=GOCSPX-...
 ```
 
-Once `GOOGLE_CLIENT_ID` is set, the password sign-in turns off, so you can clear
-`ADMIN_PASSWORD`.
+`ADMIN_PASSWORD` keeps working next to Google: the sign-in page shows both. Leave it
+empty if you want Google only.
+
+### Testing on your own computer
+
+Google only accepts redirect addresses listed on the client. To use Google sign-in with
+`npm run dev`, open the client again, add a second redirect URI and click **Save**:
+
+```
+http://localhost:3000/api/auth/google/callback
+```
+
+In `.env.local`, set `SITE_URL=http://localhost:3000`. Changes can take a few minutes to
+apply at Google. Or skip Google locally and sign in with `ADMIN_PASSWORD`.
 
 ---
 
