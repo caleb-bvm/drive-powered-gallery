@@ -1,0 +1,51 @@
+# Michael's Gallery on one server.
+# Run everything from this deploy/ folder:
+#   1. cp .env.example .env            and fill it in
+#   2. put the service account key at secrets/drive-key.json
+#   3. docker compose up -d --build
+# The site listens on 127.0.0.1:3000; put a reverse proxy with HTTPS in front
+# (see docs/deploy.md).
+
+name: michaels-gallery
+
+services:
+  app:
+    build: ..
+    image: michaels-gallery:latest
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      DATABASE_URL: postgres://gallery:${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in deploy/.env}@db:5432/gallery
+      GOOGLE_SERVICE_ACCOUNT_FILE: /run/secrets/drive_key
+    secrets:
+      - drive_key
+    volumes:
+      - gallery-data:/data
+    ports:
+      - "127.0.0.1:3000:3000"
+    depends_on:
+      db:
+        condition: service_healthy
+
+  db:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: gallery
+      POSTGRES_DB: gallery
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in deploy/.env}
+    volumes:
+      - db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U gallery -d gallery"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+secrets:
+  drive_key:
+    file: ./secrets/drive-key.json
+
+volumes:
+  gallery-data:
+  db-data:

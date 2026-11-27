@@ -1,0 +1,9 @@
+node_modules
+.next
+.data
+.git
+.env*
+!.env.example
+secrets
+deploy/secrets
+*.log

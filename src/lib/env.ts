@@ -1,4 +1,5 @@
 import 'server-only';
+import fs from 'node:fs';
 import path from 'node:path';
 
 function str(name: string, fallback = ''): string {
@@ -35,7 +36,12 @@ export const env = {
   driveMode: str('DRIVE_MODE', 'mock') as 'mock' | 'google',
   mockDriveDir: path.resolve(str('MOCK_DRIVE_DIR', '.data/mock-drive')),
   driveRootFolderId: str('DRIVE_ROOT_FOLDER_ID'),
-  serviceAccountJson: str('GOOGLE_SERVICE_ACCOUNT_JSON'),
+  // The key can sit in a file (GOOGLE_SERVICE_ACCOUNT_FILE, e.g. a Docker secret)
+  // or inline in GOOGLE_SERVICE_ACCOUNT_JSON. The file wins when both are set.
+  get serviceAccountJson() {
+    const file = str('GOOGLE_SERVICE_ACCOUNT_FILE');
+    return file ? fs.readFileSync(file, 'utf8') : str('GOOGLE_SERVICE_ACCOUNT_JSON');
+  },
   storageMode: str('STORAGE_MODE', 'local') as 'local',
   localStorageDir: path.resolve(str('LOCAL_STORAGE_DIR', '.data/storage')),
 };
