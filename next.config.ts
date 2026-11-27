@@ -4,6 +4,9 @@ import createNextIntlPlugin from 'next-intl/plugin';
 const withNextIntl = createNextIntlPlugin('./src/i18n/request.ts');
 
 const config: NextConfig = {
+  // Self-contained server bundle for the Docker image
+  output: 'standalone',
+  outputFileTracingIncludes: { '/**': ['./drizzle/**/*'] },
   serverExternalPackages: ['sharp', '@electric-sql/pglite'],
   images: {
     localPatterns: [{ pathname: '/sample/**' }, { pathname: '/api/media/**' }],

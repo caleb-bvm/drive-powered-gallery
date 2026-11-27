@@ -29,36 +29,30 @@ then open `http://localhost:3000/acceso` and type that code.
 
 Other commands: `npm test` (unit tests), `npm run lint` (type check), `npm run build`.
 
+## Running it on a server
+
+The site ships as a Docker image with Postgres, set up in `deploy/`:
+
+- [docs/deploy.md](docs/deploy.md): install, HTTPS, updates and backups.
+- [docs/google-setup.md](docs/google-setup.md): the service account key, the Clientes folder
+  and the Studio sign-in, step by step.
+
 ## Settings
 
-Copy `.env.example` to `.env.local` and fill in what you need. In production these are
-required:
+Locally, copy `.env.example` to `.env.local`. On the server, `deploy/.env.example` lists
+the same settings for Docker. In production these are required:
 
 | Variable | What it is |
 | --- | --- |
 | `APP_SECRET` | 32+ random characters. Signs sessions and preview links, hashes and encrypts codes. Never change it after launch (all codes would stop working). |
 | `SITE_URL` | The public address, e.g. `https://michaelsgallery.com` |
-| `DATABASE_URL` | Postgres (Supabase or Neon). Migrations in `drizzle/` run automatically on start. |
+| `DATABASE_URL` | Postgres. Set by Docker Compose; migrations in `drizzle/` run automatically on start. |
 | `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `ADMIN_EMAILS` | Google sign-in for the Studio, limited to the listed accounts |
-| `DRIVE_MODE=google`, `DRIVE_ROOT_FOLDER_ID`, `GOOGLE_SERVICE_ACCOUNT_JSON` | Real Google Drive access |
-
-### Connecting Google Drive
-
-1. In [Google Cloud console](https://console.cloud.google.com), create a project and enable the **Google Drive API**.
-2. Create a **service account**, then a JSON key for it. Put the whole JSON (one line, or base64) in `GOOGLE_SERVICE_ACCOUNT_JSON`.
-3. In Drive, share the top-level **Clientes** folder with the service account's email, as **Viewer**. Put that folder's ID (the last part of its URL) in `DRIVE_ROOT_FOLDER_ID`.
-4. Set `DRIVE_MODE=google`.
+| `DRIVE_MODE=google`, `DRIVE_ROOT_FOLDER_ID`, `GOOGLE_SERVICE_ACCOUNT_FILE` | Real Google Drive access (the key file is mounted as a Docker secret) |
 
 Each client gets a folder inside Clientes. Subfolders become chapters; start their
 names with a number to set the order (`01 Preparativos`, `02 Ceremonia`); the number
 is hidden on the site.
-
-### Studio sign-in with Google
-
-In the same Cloud project: APIs & Services, Credentials, **OAuth client ID**, type *Web
-application*, redirect URI `{SITE_URL}/api/auth/google/callback`. Put the ID and secret in
-`GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET`. Until then, `ADMIN_PASSWORD` gives a password
-sign-in.
 
 ## How it works
 
@@ -94,11 +88,9 @@ chapter folders inside.
 
 ## Before launch
 
-- Choose hosting. Previews currently go to local disk (`STORAGE_MODE=local`), which needs
-  a server with a persistent disk. On Vercel or Cloudflare, add the S3-compatible store
-  (R2 or Supabase Storage) behind `lib/storage`.
-- Long ZIP downloads and big publish jobs need a host that allows long requests
-  (`maxDuration` is set to 800 s for ZIPs).
+- Previews go to local disk (the `gallery-data` Docker volume). Back it up with the
+  database (see docs/deploy.md).
+- The reverse proxy must allow long requests and not buffer them, for ZIP downloads.
 - Email sending (delivery and the 7-day reminder) is not wired yet; the Studio gives a
   ready-to-copy delivery email.
 - Replace the sample images in the Studio's Main page editor with real work and a portrait.

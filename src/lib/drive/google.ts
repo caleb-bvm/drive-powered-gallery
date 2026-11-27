@@ -28,7 +28,7 @@ export class GoogleDrive implements DriveSource {
     serviceAccountJson: string,
   ) {
     if (!rootFolderId || !serviceAccountJson) {
-      throw new Error('DRIVE_ROOT_FOLDER_ID and GOOGLE_SERVICE_ACCOUNT_JSON are required when DRIVE_MODE=google');
+      throw new Error('DRIVE_ROOT_FOLDER_ID and a service account key (GOOGLE_SERVICE_ACCOUNT_FILE or GOOGLE_SERVICE_ACCOUNT_JSON) are required when DRIVE_MODE=google');
     }
     const credentials = parseKey(serviceAccountJson);
     const auth = new GoogleAuth({ credentials, scopes: ['https://www.googleapis.com/auth/drive.readonly'] });
