@@ -1,9 +1,9 @@
 import { cookies } from 'next/headers';
 import { env } from '@/lib/env';
-import { authMode, setAdmin } from '@/lib/admin';
+import { authMethods, setAdmin } from '@/lib/admin';
 
 export async function GET(req: Request) {
-  if (authMode() !== 'google') return new Response('Not found', { status: 404 });
+  if (!authMethods().google) return new Response('Not found', { status: 404 });
   const u = new URL(req.url);
   const jar = await cookies();
   const state = jar.get('mg_oauth')?.value;
@@ -31,6 +31,6 @@ export async function GET(req: Request) {
   if (!okAud || claims.email_verified !== true || !env.adminEmails.includes(email)) {
     return Response.redirect(`${env.siteUrl}/studio/login?e=denied`, 302);
   }
-  await setAdmin(email);
+  await setAdmin(email, 'google');
   return Response.redirect(`${env.siteUrl}/studio`, 302);
 }
