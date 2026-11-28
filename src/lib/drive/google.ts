@@ -2,17 +2,22 @@ import 'server-only';
 import type { Readable } from 'node:stream';
 import { drive as driveApi, type drive_v3 } from '@googleapis/drive';
 import { GoogleAuth } from 'google-auth-library';
-import type { DriveSource, DriveFolder, DriveImage, FolderScan } from './types';
+import type { DriveSource, DriveFolder, DriveImage, FolderHit, FolderListing, FolderScan } from './types';
 import { IMAGE_MIME } from './types';
-import { naturalCompare, sortChapters } from './names';
+import { browseCompare, naturalCompare, sortChapters } from './names';
 
 /*
- * Google Drive through a service account. Michael shares his top-level
- * "Clientes" folder with the service account's email as Viewer; the site can
- * read that folder and nothing else. Nothing here is ever sent to a browser.
+ * Google Drive through a service account. Michael shares his photo library
+ * folder (DRIVE_ROOT_FOLDER_ID, e.g. "Photo Repository") with the service
+ * account's email as Viewer; the Studio browses that folder and everything
+ * under it, and nothing else. Nothing here is ever sent to a browser.
  */
 
 const FOLDER = 'application/vnd.google-apps.folder';
+const META_TTL = 10 * 60_000;
+
+/** A value inside a Drive query string literal */
+const literal = (v: string) => v.replace(/\\/g, '\\\\').replace(/'/g, "\\'");
 
 function parseKey(raw: string) {
   const text = raw.trim().startsWith('{') ? raw : Buffer.from(raw, 'base64').toString('utf8');
@@ -42,7 +47,7 @@ export class GoogleDrive implements DriveSource {
     do {
       const res = await this.withRetry(() =>
         this.api.files.list({
-          q: `'${parentId.replace(/'/g, "\\'")}' in parents and trashed = false`,
+          q: `'${literal(parentId)}' in parents and trashed = false`,
           fields: 'nextPageToken, files(id, name, mimeType, size, md5Checksum)',
           pageSize: 1000,
           pageToken,
@@ -69,12 +74,78 @@ export class GoogleDrive implements DriveSource {
     }
   }
 
-  async listClientFolders(): Promise<DriveFolder[]> {
-    const files = await this.children(this.rootFolderId);
-    return files
-      .filter((f) => f.mimeType === FOLDER)
-      .map((f) => ({ id: f.id!, name: f.name ?? '' }))
-      .sort((a, b) => naturalCompare(b.name, a.name));
+  private meta = new Map<string, { at: number; id: string; name: string; parent: string | null }>();
+
+  private async info(id: string) {
+    const hit = this.meta.get(id);
+    if (hit && Date.now() - hit.at < META_TTL) return hit;
+    const res = await this.withRetry(() => this.api.files.get({ fileId: id, fields: 'id, name, parents, mimeType', supportsAllDrives: true }));
+    const entry = { at: Date.now(), id: res.data.id ?? id, name: res.data.name ?? '', parent: res.data.parents?.[0] ?? null };
+    this.meta.set(id, entry);
+    if (entry.id !== id) this.meta.set(entry.id, entry);
+    return entry;
+  }
+
+  /** Root → folder, or null when the folder isn't inside the library. */
+  private async pathTo(id: string): Promise<DriveFolder[] | null> {
+    const out: DriveFolder[] = [];
+    let cur: string | null = id;
+    for (let depth = 0; cur && depth < 40; depth++) {
+      const m: { id: string; name: string; parent: string | null } | null = await this.info(cur).catch(() => null);
+      if (!m) return null;
+      out.unshift({ id: m.id, name: m.name });
+      if (m.id === this.rootFolderId || cur === this.rootFolderId) return out;
+      cur = m.parent;
+    }
+    return null;
+  }
+
+  async listFolder(folderId?: string): Promise<FolderListing> {
+    const id = folderId || this.rootFolderId;
+    const path = await this.pathTo(id);
+    if (!path && id === this.rootFolderId) {
+      throw new Error(
+        "Can't open the library folder in Drive. Share it with the service account's email as Viewer, and check that DRIVE_ROOT_FOLDER_ID is its ID.",
+      );
+    }
+    if (!path) throw new Error('That folder is not inside your photo library.');
+    const files = await this.children(id);
+    const images = this.toImages(files);
+    return {
+      folder: path[path.length - 1],
+      path,
+      folders: files
+        .filter((f) => f.mimeType === FOLDER)
+        .map((f) => ({ id: f.id!, name: f.name ?? '' }))
+        .sort((a, b) => browseCompare(a.name, b.name)),
+      imageCount: images.length,
+      imageBytes: images.reduce((s, i) => s + i.size, 0),
+      otherFiles: files.length - images.length - files.filter((f) => f.mimeType === FOLDER).length,
+    };
+  }
+
+  async searchFolders(text: string): Promise<FolderHit[]> {
+    const t = text.trim();
+    if (!t) return [];
+    const res = await this.withRetry(() =>
+      this.api.files.list({
+        q: `mimeType = '${FOLDER}' and trashed = false and name contains '${literal(t)}'`,
+        fields: 'files(id, name, parents)',
+        pageSize: 60,
+        corpora: 'allDrives',
+        supportsAllDrives: true,
+        includeItemsFromAllDrives: true,
+      }),
+    );
+    const hits: FolderHit[] = [];
+    for (const f of res.data.files ?? []) {
+      if (!f.id || f.id === this.rootFolderId) continue;
+      this.meta.set(f.id, { at: Date.now(), id: f.id, name: f.name ?? '', parent: f.parents?.[0] ?? null });
+      const path = await this.pathTo(f.id);
+      if (path) hits.push({ id: f.id, name: f.name ?? '', path });
+      if (hits.length >= 30) break;
+    }
+    return hits.sort((a, b) => browseCompare(a.name, b.name));
   }
 
   private toImages(files: drive_v3.Schema$File[]): DriveImage[] {

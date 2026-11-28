@@ -30,10 +30,31 @@ export interface FolderScan {
   totalBytes: number;
 }
 
+/** One level of the photo library, for browsing in the Studio */
+export interface FolderListing {
+  folder: DriveFolder;
+  /** From the library root down to this folder, both included */
+  path: DriveFolder[];
+  /** Direct subfolders: dated ones newest first, the rest in natural order */
+  folders: DriveFolder[];
+  /** Usable photos directly inside this folder */
+  imageCount: number;
+  imageBytes: number;
+  /** Other files directly inside (RAW, HEIC, video…), which albums skip */
+  otherFiles: number;
+}
+
+export interface FolderHit extends DriveFolder {
+  /** From the library root down to the folder, both included */
+  path: DriveFolder[];
+}
+
 export interface DriveSource {
-  /** Client folders inside the top-level "Clientes" folder */
-  listClientFolders(): Promise<DriveFolder[]>;
-  /** One client folder: its images, and subfolders as chapters */
+  /** One folder of the library (the root when no id is given) */
+  listFolder(folderId?: string): Promise<FolderListing>;
+  /** Folders anywhere in the library whose name contains the text */
+  searchFolders(text: string): Promise<FolderHit[]>;
+  /** One album folder: its images, and subfolders as chapters */
   scanFolder(folderId: string): Promise<FolderScan>;
   /** Stream an original file, untouched */
   openOriginal(fileId: string): Promise<Readable>;

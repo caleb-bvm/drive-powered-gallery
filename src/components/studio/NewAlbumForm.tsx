@@ -2,19 +2,15 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { albumProgress, listFolders, publishAlbum, scanFolder } from '@/app/studio/actions';
+import { albumProgress, publishAlbum, scanFolder } from '@/app/studio/actions';
 import { deliveryEmail, fmt, gb } from '@/lib/studio-format';
 import type { Category } from '@/lib/categories';
 import { CategorySelect } from './CategorySelect';
 import { CodeField, type CodeStatus } from './CodeField';
+import { FolderBrowser } from './FolderBrowser';
 import { useToast } from './Toast';
 
 type Scan = Extract<Awaited<ReturnType<typeof scanFolder>>, { ok: true }>;
-const folderSvg = (
-  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round" aria-hidden="true">
-    <path d="M3.5 7.5A1.5 1.5 0 0 1 5 6h4l2 2h8a1.5 1.5 0 0 1 1.5 1.5v8A1.5 1.5 0 0 1 19 19H5a1.5 1.5 0 0 1-1.5-1.5z" />
-  </svg>
-);
 const thumb = (id: string) => `/api/studio/thumb?id=${encodeURIComponent(id)}`;
 const today = () => new Date(Date.now() - new Date().getTimezoneOffset() * 6e4).toISOString().slice(0, 10);
 
@@ -25,9 +21,9 @@ export function NewAlbumForm({ siteUrl, driveMode, categories }: { siteUrl: stri
   const [eventType, setEventType] = useState('wedding');
   const [eventDate, setEventDate] = useState(today());
   const [place, setPlace] = useState('');
-  const [folders, setFolders] = useState<{ id: string; name: string }[] | null>(null);
   const [folderErr, setFolderErr] = useState('');
   const [folder, setFolder] = useState<string | null>(null);
+  const [folderPath, setFolderPath] = useState<string[]>([]);
   const [scan, setScan] = useState<Scan | null>(null);
   const [scanning, setScanning] = useState(false);
   const [cover, setCover] = useState<string | null>(null);
@@ -44,13 +40,12 @@ export function NewAlbumForm({ siteUrl, driveMode, categories }: { siteUrl: stri
   const [publishing, setPublishing] = useState<null | { id?: string; processed: number; total: number; status: string; err?: string | null }>(null);
   const poll = useRef<ReturnType<typeof setInterval>>(undefined);
 
-  useEffect(() => {
-    listFolders().then((r) => (r.ok ? setFolders(r.folders) : (setFolderErr(r.error), setFolders([]))));
-    return () => clearInterval(poll.current);
-  }, []);
+  useEffect(() => () => clearInterval(poll.current), []);
 
-  const pickFolder = async (id: string) => {
+  const pickFolder = async (id: string, path: string[]) => {
     setFolder(id);
+    setFolderPath(path);
+    setFolderErr('');
     setScan(null);
     setCover(null);
     setScanning(true);
@@ -145,33 +140,31 @@ export function NewAlbumForm({ siteUrl, driveMode, categories }: { siteUrl: stri
         <section className="step">
           <h2>Drive folder</h2>
           <p>
-            Folders inside &quot;Clientes&quot; in your Google Drive. Subfolders become chapters; start their names with a number
-            (&quot;01 Preparativos&quot;) to set the order.
+            Browse your photo library and open the folder with this client&apos;s photos. Photos directly inside it and in its
+            subfolders are used; subfolders become chapters (start their names with a number, &quot;01 Preparativos&quot;, to set
+            the order).
             {driveMode === 'mock' && ' (Development: reading the sample folders on disk.)'}
           </p>
+          <FolderBrowser selected={folder} onPick={pickFolder} />
           {folderErr && <p className="err">{folderErr}</p>}
-          {!folders && <p className="loading">Reading Drive…</p>}
-          <div className="folders">
-            {folders?.map((f) => (
-              <button key={f.id} type="button" className="folder" aria-pressed={folder === f.id} onClick={() => pickFolder(f.id)}>
-                {folderSvg}
-                <span>
-                  <b>{f.name}</b>
-                  <small>
-                    {folder === f.id
-                      ? scanning
-                        ? 'Counting photos…'
-                        : scan
-                          ? `${scan.photoCount} photos, ${scan.chapters.length} subfolders, ${gb(scan.totalBytes)}`
-                          : ''
-                      : 'Click to read'}
-                  </small>
-                </span>
-                <span className="tick" />
-              </button>
-            ))}
-            {folders && !folders.length && !folderErr && <p className="small">No folders yet. Create one per client inside &quot;Clientes&quot;.</p>}
-          </div>
+          {folder && (
+            <div className="picked">
+              <span className="lbl">Album folder</span>
+              <b>{folderPath.slice(1).join(' / ')}</b>
+              <small>
+                {scanning
+                  ? 'Counting photos…'
+                  : scan
+                    ? `${scan.photoCount} photos, ${scan.chapters.length} chapters, ${gb(scan.totalBytes)}`
+                    : ''}
+              </small>
+              {scan && !scan.photoCount && (
+                <p className="small hint bad">
+                  No photos in this folder or its first level of subfolders. Open the event folder itself and use that one.
+                </p>
+              )}
+            </div>
+          )}
           {scan && scan.chapters.length > 0 && (
             <div className="chaps">
               <span className="lbl">Chapters found</span>
