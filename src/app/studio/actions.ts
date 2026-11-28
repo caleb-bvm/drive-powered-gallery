@@ -102,19 +102,23 @@ export async function searchFolders(text: string): Promise<Result<{ hits: Folder
 }
 
 export async function scanFolder(id: string): Promise<
-  Result<{ name: string; photoCount: number; totalBytes: number; chapters: { name: string; count: number }[]; candidates: { id: string; name: string }[] }>
+  Result<{ name: string; photoCount: number; totalBytes: number; chapters: { name: string; count: number }[]; candidates: { id: string; name: string; chapter: string }[] }>
 > {
   try {
     await requireAdmin();
     const s = await getDrive().scanFolder(id);
-    const all = [...s.looseImages, ...s.chapters.flatMap((c) => c.images)];
+    const all = [
+      ...s.looseImages.map((i) => ({ id: i.id, name: i.name, chapter: '' })),
+      ...s.chapters.flatMap((c) => c.images.map((i) => ({ id: i.id, name: i.name, chapter: c.name }))),
+    ];
     return {
       ok: true,
       name: s.folder.name,
       photoCount: s.photoCount,
       totalBytes: s.totalBytes,
       chapters: s.chapters.map((c) => ({ name: c.name, count: c.images.length })),
-      candidates: all.slice(0, 36).map((i) => ({ id: i.id, name: i.name })),
+      // Every photo can be the cover; the picker pages through them
+      candidates: all,
     };
   } catch (e) {
     return fail(e);

@@ -184,13 +184,7 @@ export function NewAlbumForm({ siteUrl, driveMode, categories }: { siteUrl: stri
           {!scan ? (
             <p className="small">Choose a folder first.</p>
           ) : (
-            <div className="thumbs">
-              {scan.candidates.map((c) => (
-                <button key={c.id} type="button" className="thumb" aria-pressed={cover === c.id} aria-label={`Use ${c.name} as cover`} onClick={() => setCover(c.id)}>
-                  <img src={thumb(c.id)} alt="" loading="lazy" />
-                </button>
-              ))}
-            </div>
+            <CoverPicker key={folder ?? ''} candidates={scan.candidates} cover={cover} onPick={setCover} />
           )}
         </section>
 
@@ -345,5 +339,59 @@ function Toggle({ label, hint, on, set }: { label: string; hint: string; on: boo
       </span>
       <button type="button" className="sw" role="switch" aria-checked={on} aria-label={label} onClick={() => set(!on)} />
     </div>
+  );
+}
+
+const PAGE = 60;
+
+function CoverPicker({
+  candidates,
+  cover,
+  onPick,
+}: {
+  candidates: { id: string; name: string; chapter: string }[];
+  cover: string | null;
+  onPick: (id: string) => void;
+}) {
+  const chapters = [...new Set(candidates.map((c) => c.chapter))];
+  const [chapter, setChapter] = useState<string | null>(null);
+  const [shown, setShown] = useState(PAGE);
+  const list = chapter === null ? candidates : candidates.filter((c) => c.chapter === chapter);
+  const pick = (c: string | null) => {
+    setChapter(c);
+    setShown(PAGE);
+  };
+  return (
+    <>
+      {chapters.length > 1 && (
+        <div className="seg covtabs">
+          <button type="button" aria-pressed={chapter === null} onClick={() => pick(null)}>
+            All <em>{candidates.length}</em>
+          </button>
+          {chapters.map((c) => (
+            <button key={c} type="button" aria-pressed={chapter === c} onClick={() => pick(c)}>
+              {c || 'Loose photos'} <em>{candidates.filter((x) => x.chapter === c).length}</em>
+            </button>
+          ))}
+        </div>
+      )}
+      <div className="thumbs">
+        {list.slice(0, shown).map((c) => (
+          <button key={c.id} type="button" className="thumb" aria-pressed={cover === c.id} aria-label={`Use ${c.name} as cover`} title={c.name} onClick={() => onPick(c.id)}>
+            <img src={thumb(c.id)} alt="" loading="lazy" />
+          </button>
+        ))}
+      </div>
+      <div className="covmore">
+        <span className="small">
+          Showing {Math.min(shown, list.length)} of {list.length}
+        </span>
+        {shown < list.length && (
+          <button type="button" className="pill" onClick={() => setShown((n) => n + PAGE * 2)}>
+            Show more
+          </button>
+        )}
+      </div>
+    </>
   );
 }
