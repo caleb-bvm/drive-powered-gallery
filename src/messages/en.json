@@ -84,6 +84,25 @@
     "started": "Download started",
     "singleStarted": "Your original is downloading.",
     "leave": "Leave gallery",
-    "keys": "Arrows to move, F to favourite, Esc to close."
+    "keys": "Arrows to move, scroll, click or double-tap to zoom, F to favourite, S to select, Esc to close.",
+    "zoom": "Zoom",
+    "zoomIn": "Zoom in",
+    "zoomOut": "Zoom out",
+    "zoomFit": "Show the whole photograph",
+    "select": "Select",
+    "selected": "Selected",
+    "selectDone": "Done",
+    "selectPhoto": "Select {name}",
+    "selection": "Selection",
+    "selectExit": "Leave selection",
+    "selectedCount": "{count, plural, =0 {None selected} other {# selected}}",
+    "selectHint": "Tap or click the photographs you want.",
+    "selectAll": "Select all",
+    "selectNone": "Clear selection",
+    "downloadSel": "Download ({count})",
+    "zipSelTitle": "Download your selection",
+    "favSelDone": "{count, plural, one {# added to favourites} other {# added to favourites}}",
+    "unfavSelDone": "{count, plural, one {# removed from favourites} other {# removed from favourites}}",
+    "saveFailed": "Couldn't save that. Please try again."
   }
 }
