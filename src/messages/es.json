@@ -50,14 +50,6 @@
     "revealLabel": "Presentación de la galería",
     "preparing": "Tu galería se está preparando. Vuelve a intentarlo en unos minutos."
   },
-  "events": {
-    "wedding": "Boda",
-    "xv": "XV años",
-    "portrait": "Sesión de retrato",
-    "family": "Sesión familiar",
-    "commercial": "Sesión comercial",
-    "other": "Sesión"
-  },
   "gallery": {
     "metaPlace": "{event} en {place}, {date}.",
     "metaNoPlace": "{event}, {date}.",

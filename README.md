@@ -9,7 +9,7 @@ client access key.
   black, then a camera flash leads into the gallery: chapters, viewer, favourites, and
   downloads of the untouched originals (single files or ZIPs in ~2 GB parts).
 - **Studio** (`/studio`, English): albums from Drive folders, codes, expiry, activity,
-  and editing the main page in both languages.
+  photography categories, and editing the main page in both languages.
 
 Photos stay in Michael's Google Drive. The site makes web previews once, and pulls
 originals from Drive only when someone downloads.
@@ -88,6 +88,12 @@ placeholder. Pages pick the size that fits the screen and the server never resiz
 request. The hero is never taller than a 3:2 frame, so camera-ratio photos keep almost
 their full width on wide screens; click a photo in the Studio to set the point that
 stays in frame when it is cropped (phones, portrait frames).
+
+**Categories.** Each album has a category (wedding, XV años, newborn, product, street…),
+shown to the client in their language. About a hundred come built in, grouped in
+`src/lib/categories.ts`; more can be added, renamed or removed under Studio → Categories
+(stored in the `categories` table). Ids are saved on albums, so never change a built-in id.
+A category can only be removed once no album uses it.
 
 **Downloads.** Originals stream from Drive through the server; the browser never sees a
 Drive link or file ID. ZIPs stream as they are built, split into ~2 GB parts, with

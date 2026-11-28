@@ -42,15 +42,6 @@ export function stateLabel(a: { status: string; expiresAt: Date | string }): str
   return { processing: 'Processing', error: 'Needs attention', live: 'Live', exp: `Closes in ${daysLeft(a.expiresAt)} days`, closed: 'Closed' }[s];
 }
 
-export const EVENT_LABELS: Record<string, string> = {
-  wedding: 'Wedding',
-  xv: 'XV años',
-  portrait: 'Portrait session',
-  family: 'Family',
-  commercial: 'Commercial',
-  other: 'Other',
-};
-
 export function gb(bytes: number) {
   return bytes >= 1024 ** 3 ? `${(bytes / 1024 ** 3).toFixed(1)} GB` : `${Math.round(bytes / 1024 ** 2)} MB`;
 }

@@ -3,6 +3,7 @@ import { requireAdminPage } from '@/lib/admin';
 import { albumCodes, albumEvents, eventCounts, getAlbum, getAlbumPhotos } from '@/lib/albums';
 import { previewUrl } from '@/lib/session';
 import { env } from '@/lib/env';
+import { allCategories } from '@/lib/categories-db';
 import { AlbumDetail } from '@/components/studio/AlbumDetail';
 
 export const metadata = { title: 'Album' };
@@ -12,11 +13,12 @@ export default async function AlbumPage({ params }: { params: Promise<{ id: stri
   const { id } = await params;
   const album = await getAlbum(id);
   if (!album) notFound();
-  const [codes, { photos, chapters, favourites }, events, counts] = await Promise.all([
+  const [codes, { photos, chapters, favourites }, events, counts, categories] = await Promise.all([
     albumCodes(id),
     getAlbumPhotos(id),
     albumEvents(id),
     eventCounts(id),
+    allCategories(),
   ]);
   const ready = photos.filter((p) => p.previewVersion > 0);
   const thumbs = Object.fromEntries(ready.map((p) => [p.id, previewUrl(p.id, 'sm', p.previewVersion)]));
@@ -42,6 +44,7 @@ export default async function AlbumPage({ params }: { params: Promise<{ id: stri
         coverPhotoId: album.coverPhotoId,
         cover: cover ? previewUrl(cover.id, 'lg', cover.previewVersion) : null,
       }}
+      categories={categories}
       code={codes.client ?? ''}
       guestCode={codes.guest}
       counts={{ unlocks: counts.unlock ?? 0, zips: counts.zip ?? 0, singles: counts.download ?? 0 }}

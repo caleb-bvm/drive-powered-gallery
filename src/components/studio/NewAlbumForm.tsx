@@ -3,7 +3,9 @@
 import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { albumProgress, listFolders, publishAlbum, scanFolder } from '@/app/studio/actions';
-import { deliveryEmail, EVENT_LABELS, fmt, gb } from '@/lib/studio-format';
+import { deliveryEmail, fmt, gb } from '@/lib/studio-format';
+import type { Category } from '@/lib/categories';
+import { CategorySelect } from './CategorySelect';
 import { CodeField, type CodeStatus } from './CodeField';
 import { useToast } from './Toast';
 
@@ -16,7 +18,7 @@ const folderSvg = (
 const thumb = (id: string) => `/api/studio/thumb?id=${encodeURIComponent(id)}`;
 const today = () => new Date(Date.now() - new Date().getTimezoneOffset() * 6e4).toISOString().slice(0, 10);
 
-export function NewAlbumForm({ siteUrl, driveMode }: { siteUrl: string; driveMode: string }) {
+export function NewAlbumForm({ siteUrl, driveMode, categories }: { siteUrl: string; driveMode: string; categories: Category[] }) {
   const router = useRouter();
   const [toast, Toast] = useToast();
   const [name, setName] = useState('');
@@ -126,14 +128,8 @@ export function NewAlbumForm({ siteUrl, driveMode }: { siteUrl: string; driveMod
               <input id="nm" placeholder="Sofía & Andrés" maxLength={60} value={name} onChange={(e) => setName(e.target.value)} />
             </div>
             <div className="f">
-              <label htmlFor="ev">Event</label>
-              <select id="ev" value={eventType} onChange={(e) => setEventType(e.target.value)}>
-                {Object.entries(EVENT_LABELS).map(([k, l]) => (
-                  <option key={k} value={k}>
-                    {l}
-                  </option>
-                ))}
-              </select>
+              <label htmlFor="ev">Category</label>
+              <CategorySelect id="ev" value={eventType} categories={categories} onChange={setEventType} />
             </div>
             <div className="f">
               <label htmlFor="dt">Date</label>

@@ -4,7 +4,9 @@ import { useEffect, useState, useTransition } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { changeCode, close, extend, removeAlbum, retryProcessing, saveDetails, sync } from '@/app/studio/actions';
-import { albumState, daysLeft, deliveryEmail, EVENT_LABELS, fmt, local, stateLabel, TZ } from '@/lib/studio-format';
+import { albumState, daysLeft, deliveryEmail, fmt, local, stateLabel, TZ } from '@/lib/studio-format';
+import { categoryLabel, type Category } from '@/lib/categories';
+import { CategorySelect } from './CategorySelect';
 import { CodeField } from './CodeField';
 import { useToast } from './Toast';
 
@@ -27,6 +29,7 @@ interface Props {
     coverPhotoId: string | null;
     cover: string | null;
   };
+  categories: Category[];
   code: string;
   guestCode: string | null;
   counts: { unlocks: number; zips: number; singles: number };
@@ -57,7 +60,7 @@ const when = (iso: string) => {
   return `${fmt(day).replace(/ \d{4}$/, '')}, ${hm}`;
 };
 
-export function AlbumDetail({ siteUrl, album: a, code, guestCode, counts, photos, favourites, events }: Props) {
+export function AlbumDetail({ siteUrl, album: a, categories, code, guestCode, counts, photos, favourites, events }: Props) {
   const router = useRouter();
   const [toast, Toast] = useToast();
   const [pending, start] = useTransition();
@@ -110,7 +113,7 @@ export function AlbumDetail({ siteUrl, album: a, code, guestCode, counts, photos
           <div>
             <h1>{a.name}</h1>
             <div className="meta">
-              {EVENT_LABELS[a.eventType] ?? 'Other'}
+              {categoryLabel(a.eventType, 'en', categories)}
               {a.eventDate ? `, ${fmt(a.eventDate)}` : ''}
               {a.place ? `. ${a.place}` : ''}. {stateLabel(a)}.
             </div>
@@ -366,14 +369,8 @@ export function AlbumDetail({ siteUrl, album: a, code, guestCode, counts, photos
                   <input id="enm" value={edit.name} maxLength={60} onChange={(e) => setEdit({ ...edit, name: e.target.value })} />
                 </div>
                 <div className="f">
-                  <label htmlFor="eev">Event</label>
-                  <select id="eev" value={edit.eventType} onChange={(e) => setEdit({ ...edit, eventType: e.target.value })}>
-                    {Object.entries(EVENT_LABELS).map(([k, l]) => (
-                      <option key={k} value={k}>
-                        {l}
-                      </option>
-                    ))}
-                  </select>
+                  <label htmlFor="eev">Category</label>
+                  <CategorySelect id="eev" value={edit.eventType} categories={categories} onChange={(v) => setEdit({ ...edit, eventType: v })} />
                 </div>
                 <div className="f">
                   <label htmlFor="edt">Date</label>
