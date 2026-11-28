@@ -7,7 +7,7 @@ email, an issue or a commit.
 | # | What | What it's for | Where it goes |
 | --- | --- | --- | --- |
 | 1 | **Service account key** (a JSON file) | Lets the site *read* your client folders in Drive, without your password. It can only see folders you share with it, and only as Viewer. | `deploy/secrets/drive-key.json` |
-| 2 | **"Clientes" folder ID** | Tells the site which Drive folder holds the client galleries. | `DRIVE_ROOT_FOLDER_ID` in `deploy/.env` |
+| 2 | **Photo library folder ID** | Tells the site which Drive folder holds your photos (e.g. "Photo Repository"). | `DRIVE_ROOT_FOLDER_ID` in `deploy/.env` |
 | 3 | **OAuth client** (ID + secret) | Lets *you* sign in to the Studio with your Google account. Only the emails in `ADMIN_EMAILS` get in. | `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET` in `deploy/.env` |
 
 It takes about 20 minutes. Use the Google account that owns the photos.
@@ -74,11 +74,11 @@ key ever leaks, go to the service account's **Keys** tab, delete it, and create 
 
 ---
 
-## Part 2. The "Clientes" folder
+## Part 2. Your photo library folder
 
 ### Share it with the service account
 
-1. In [Google Drive](https://drive.google.com), create a folder called **Clientes**, or use the one you have.
+1. In [Google Drive](https://drive.google.com), find the top folder that holds your photos (for example **Photo Repository**).
 2. Right-click it → **Share → Share**.
 3. Paste the service account email from Part 1, set the role to **Viewer**, untick
    **Notify people**, and click **Share**.
@@ -91,7 +91,7 @@ key ever leaks, go to the service account's **Keys** tab, delete it, and create 
 
 ### Copy the folder ID
 
-Open the Clientes folder. The address bar shows:
+Open that folder. The address bar shows:
 
 ```
 https://drive.google.com/drive/folders/1AbCdEfGhIjKlMnOpQrStUvWxYz012345
@@ -107,14 +107,22 @@ DRIVE_ROOT_FOLDER_ID=1AbCdEfGhIjKlMnOpQrStUvWxYz012345
 
 ### How to organise it
 
+Any layout works. The Studio lets you browse down through the folders (with breadcrumbs
+and search) and pick any one as an album. For example:
+
 ```
-Clientes/
-  2026-11 Ana y Diego, boda/       ← one folder per client (pick it in the Studio)
-    01 Preparativos/               ← subfolders become chapters
-    02 Ceremonia/                    the number sets the order and is hidden
-    03 Fiesta/
-  2026-12 Retratos Gómez/          ← photos directly inside work too (one chapter)
+Photo Repository/                      ← DRIVE_ROOT_FOLDER_ID
+  2026/
+    01 January/
+      2026-01-01 San Jose/             ← pick this folder for the album
+        01 Preparativos/               ← subfolders become chapters
+        02 Ceremonia/                    the number sets the order and is hidden
+      2026-01-18 Retratos Gómez/       ← photos directly inside work too (one chapter)
 ```
+
+An album uses the photos directly inside the folder you pick, plus one level of
+subfolders as chapters. JPEG, PNG, WebP, TIFF and AVIF are used; RAW, HEIC and videos
+are skipped, so export JPEGs next to them.
 
 ---
 
@@ -184,12 +192,13 @@ docker compose logs -f app
 ```
 
 1. Open `https://your-domain.com/studio` and **Sign in with Google**.
-2. Click **New album**: your client folders from Clientes should be listed.
+2. Click **New album**: the folders inside your photo library should be listed.
 3. Pick one, set a code, publish, then try the code at `https://your-domain.com/acceso`.
 
 | Problem | Likely cause |
 | --- | --- |
 | `redirect_uri_mismatch` on sign-in | The redirect URI in Part 3 doesn't exactly match `SITE_URL` + `/api/auth/google/callback`. |
 | "That Google account is not allowed into the Studio" | The email isn't in `ADMIN_EMAILS`. |
-| No folders in New album | Clientes isn't shared with the service account email, or the folder ID is wrong. |
+| No folders in New album, or "Can't open the library folder" | The library folder isn't shared with the service account email, or `DRIVE_ROOT_FOLDER_ID` is wrong. |
+| A folder shows "0 photos" | Photos sit deeper than one level of subfolders (e.g. you picked a year or month). Open the event folder and use that one. If it says "other files skipped", they're RAW/HEIC: export JPEGs. |
 | `EACCES` on `/run/secrets/drive_key` in the logs | Run the `chown 1001:1001` and `chmod 400` commands from Part 1. |

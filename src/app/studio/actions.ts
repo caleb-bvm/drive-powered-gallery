@@ -4,7 +4,7 @@ import { after } from 'next/server';
 import { redirect } from 'next/navigation';
 import { revalidatePath } from 'next/cache';
 import { requireAdmin, authMethods, passwordMatches, setAdmin, clearAdmin } from '@/lib/admin';
-import { getDrive } from '@/lib/drive';
+import { getDrive, type FolderHit, type FolderListing } from '@/lib/drive';
 import {
   closeAlbum,
   codeOwner,
@@ -83,10 +83,19 @@ export async function checkCode(raw: string, albumId?: string) {
 
 /* ---- Drive ------------------------------------------------------------- */
 
-export async function listFolders(): Promise<Result<{ folders: { id: string; name: string }[] }>> {
+export async function browseFolder(id?: string): Promise<Result<{ listing: FolderListing }>> {
   try {
     await requireAdmin();
-    return { ok: true, folders: await getDrive().listClientFolders() };
+    return { ok: true, listing: await getDrive().listFolder(id) };
+  } catch (e) {
+    return fail(e);
+  }
+}
+
+export async function searchFolders(text: string): Promise<Result<{ hits: FolderHit[] }>> {
+  try {
+    await requireAdmin();
+    return { ok: true, hits: await getDrive().searchFolders(text.slice(0, 80)) };
   } catch (e) {
     return fail(e);
   }

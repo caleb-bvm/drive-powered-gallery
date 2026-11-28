@@ -29,3 +29,13 @@ export function sortChapters<T extends { rawName: string }>(items: T[]): (T & { 
     })
     .map(({ it, p }, i) => ({ ...it, name: p.name, sort: i }));
 }
+
+const DATED = /^\s*(19|20)\d\d(\D|$)/;
+
+/** Studio folder browser: dated folders ("2026", "2026-01-01 San Jose") newest first, then the rest in natural order ("01 January", "02 February"). */
+export function browseCompare(a: string, b: string): number {
+  const da = DATED.test(a);
+  const db = DATED.test(b);
+  if (da !== db) return da ? -1 : 1;
+  return da ? naturalCompare(b, a) : naturalCompare(a, b);
+}

@@ -34,7 +34,7 @@ Other commands: `npm test` (unit tests), `npm run lint` (type check), `npm run b
 The site ships as a Docker image with Postgres, set up in `deploy/`:
 
 - [docs/deploy.md](docs/deploy.md): install, HTTPS, updates and backups.
-- [docs/google-setup.md](docs/google-setup.md): the service account key, the Clientes folder
+- [docs/google-setup.md](docs/google-setup.md): the service account key, the photo library folder
   and the Studio sign-in, step by step.
 
 ## Settings
@@ -50,9 +50,10 @@ the same settings for Docker. In production these are required:
 | `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `ADMIN_EMAILS` | Google sign-in for the Studio, limited to the listed accounts |
 | `DRIVE_MODE=google`, `DRIVE_ROOT_FOLDER_ID`, `GOOGLE_SERVICE_ACCOUNT_FILE` | Real Google Drive access (the key file is mounted as a Docker secret) |
 
-Each client gets a folder inside Clientes. Subfolders become chapters; start their
-names with a number to set the order (`01 Preparativos`, `02 Ceremonia`); the number
-is hidden on the site.
+`DRIVE_ROOT_FOLDER_ID` points at the photo library (e.g. "Photo Repository"). In the
+Studio you browse down it (year, month, event) and pick any folder as an album.
+Subfolders of that folder become chapters; start their names with a number to set the
+order (`01 Preparativos`, `02 Ceremonia`); the number is hidden on the site.
 
 ## How it works
 

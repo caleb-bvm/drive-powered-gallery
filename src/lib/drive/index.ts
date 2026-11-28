@@ -16,4 +16,4 @@ export function getDrive(): DriveSource {
   return instance;
 }
 
-export type { DriveSource, FolderScan, DriveFolder, DriveImage } from './types';
+export type { DriveSource, FolderScan, DriveFolder, DriveImage, FolderListing, FolderHit } from './types';

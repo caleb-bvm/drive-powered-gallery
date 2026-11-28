@@ -5,13 +5,14 @@ import path from 'node:path';
 import crypto from 'node:crypto';
 import type { Readable } from 'node:stream';
 import sharp from 'sharp';
-import type { DriveSource, DriveFolder, DriveImage, FolderScan } from './types';
-import { naturalCompare, sortChapters } from './names';
+import type { DriveSource, DriveFolder, DriveImage, FolderHit, FolderListing, FolderScan } from './types';
+import { browseCompare, naturalCompare, sortChapters } from './names';
 
 /*
  * A stand-in for Google Drive that reads a folder on disk. The layout mirrors
- * Drive: MOCK_DRIVE_DIR/<client folder>/<chapter subfolder>/<photo>.jpg
- * IDs are the base64url of the path relative to the root.
+ * Drive: MOCK_DRIVE_DIR is the photo library, with folders nested any depth
+ * (year/month/event/chapter). IDs are the base64url of the path relative to
+ * the root; the root itself is "root".
  */
 
 const EXT_MIME: Record<string, string> = {
@@ -32,19 +33,61 @@ export class MockDrive implements DriveSource {
   }
 
   private resolve(id: string) {
+    const root = path.resolve(this.root);
+    if (id === 'root') return root;
     const rel = Buffer.from(id, 'base64url').toString('utf8');
-    const abs = path.resolve(this.root, rel);
-    if (!abs.startsWith(path.resolve(this.root) + path.sep)) throw new Error('Not found');
+    const abs = path.resolve(root, rel);
+    if (!abs.startsWith(root + path.sep)) throw new Error('Not found');
     return abs;
   }
 
-  async listClientFolders(): Promise<DriveFolder[]> {
-    if (!fs.existsSync(this.root)) return [];
-    const entries = await fsp.readdir(this.root, { withFileTypes: true });
-    return entries
-      .filter((e) => e.isDirectory() && !e.name.startsWith('.'))
-      .map((e) => ({ id: this.id(e.name), name: e.name }))
-      .sort((a, b) => naturalCompare(b.name, a.name));
+  private folderOf(abs: string): DriveFolder {
+    const rel = path.relative(path.resolve(this.root), abs);
+    return rel ? { id: this.id(rel), name: path.basename(abs) } : { id: 'root', name: 'Mock Drive' };
+  }
+
+  private pathOf(abs: string): DriveFolder[] {
+    const root = path.resolve(this.root);
+    const out: DriveFolder[] = [];
+    for (let cur = abs; ; cur = path.dirname(cur)) {
+      out.unshift(this.folderOf(cur));
+      if (cur === root || cur === path.dirname(cur)) break;
+    }
+    return out;
+  }
+
+  async listFolder(folderId?: string): Promise<FolderListing> {
+    const abs = this.resolve(folderId || 'root');
+    const entries = fs.existsSync(abs) ? await fsp.readdir(abs, { withFileTypes: true }) : [];
+    const dirs = entries.filter((e) => e.isDirectory() && !e.name.startsWith('.'));
+    const images = await this.images(abs).catch(() => []);
+    const files = entries.filter((e) => e.isFile() && !e.name.startsWith('.'));
+    return {
+      folder: this.folderOf(abs),
+      path: this.pathOf(abs),
+      folders: dirs.map((d) => this.folderOf(path.join(abs, d.name))).sort((a, b) => browseCompare(a.name, b.name)),
+      imageCount: images.length,
+      imageBytes: images.reduce((s, i) => s + i.size, 0),
+      otherFiles: files.length - images.length,
+    };
+  }
+
+  async searchFolders(text: string): Promise<FolderHit[]> {
+    const t = text.trim().toLocaleLowerCase('es');
+    if (!t) return [];
+    const root = path.resolve(this.root);
+    if (!fs.existsSync(root)) return [];
+    const hits: FolderHit[] = [];
+    const walk = async (dir: string) => {
+      for (const e of await fsp.readdir(dir, { withFileTypes: true })) {
+        if (!e.isDirectory() || e.name.startsWith('.')) continue;
+        const abs = path.join(dir, e.name);
+        if (e.name.toLocaleLowerCase('es').includes(t)) hits.push({ ...this.folderOf(abs), path: this.pathOf(abs) });
+        await walk(abs);
+      }
+    };
+    await walk(root);
+    return hits.sort((a, b) => browseCompare(a.name, b.name)).slice(0, 30);
   }
 
   private async images(dirAbs: string): Promise<DriveImage[]> {

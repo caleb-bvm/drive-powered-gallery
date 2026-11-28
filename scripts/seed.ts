@@ -2,7 +2,8 @@
  * Builds a mock Google Drive on disk from the sample images, so the whole
  * client flow works locally before real Drive credentials exist.
  *   npm run seed            -> .data/mock-drive (or MOCK_DRIVE_DIR)
- * Layout mirrors Drive: <client folder>/<chapter subfolder>/<photo>.jpg
+ * Layout mirrors a photo library on Drive:
+ *   <year>/<month>/<event folder>/<chapter subfolder>/<photo>.jpg
  */
 import fs from 'node:fs';
 import path from 'node:path';
@@ -12,14 +13,14 @@ const src = path.resolve('sample');
 const imgs = fs.readdirSync(src).filter((f) => f.endsWith('.jpg')).sort();
 
 const folders: Record<string, Record<string, number>> = {
-  '2026-11 Ana y Diego, boda': { '01 Preparativos': 6, '02 Ceremonia': 7, '03 Retratos': 6, '04 Fiesta': 5 },
-  '2026-11 Bautizo Mejía': { Iglesia: 5, 'Recepción': 6 },
-  '2026-10 Retratos Gómez': { '': 8 },
+  '2026/11 November/2026-11-14 Ana y Diego, boda': { '01 Preparativos': 6, '02 Ceremonia': 7, '03 Retratos': 6, '04 Fiesta': 5 },
+  '2026/11 November/2026-11-02 Bautizo Mejía': { Iglesia: 5, 'Recepción': 6 },
+  '2026/10 October/2026-10-19 Retratos Gómez': { '': 8 },
 };
 
 let n = 0;
 for (const [folder, chapters] of Object.entries(folders)) {
-  const prefix = folder.split(' ').slice(1, 2)[0].slice(0, 2).toUpperCase();
+  const prefix = path.basename(folder).split(' ').slice(1, 2)[0].slice(0, 2).toUpperCase();
   let file = 412;
   for (const [chapter, count] of Object.entries(chapters)) {
     const dir = path.join(root, folder, chapter);
