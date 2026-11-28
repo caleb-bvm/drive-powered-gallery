@@ -543,7 +543,7 @@ img {
 }
 .boxes {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr)) 14px repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(6, minmax(0, 1fr));
   gap: 8px;
   align-items: center;
 }
@@ -562,10 +562,6 @@ img {
 .boxes input:focus {
   border-color: var(--ink);
   box-shadow: 0 0 0 3px #ffffff26;
-}
-.boxes span {
-  height: 1px;
-  background: #474747;
 }
 .card.shake {
   animation: shake 0.45s;
@@ -1012,6 +1008,31 @@ img {
   align-items: center;
   gap: 12px;
 }
+.sortby select {
+  appearance: none;
+  -webkit-appearance: none;
+  background: none;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  padding: 7px 30px 7px 14px;
+  font: inherit;
+  font-size: 14px;
+  color: var(--mute);
+  cursor: pointer;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' fill='none' stroke='%23a3a3a3' stroke-width='1.4'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+}
+.sortby select:hover,
+.sortby select:focus-visible {
+  border-color: var(--ink);
+  color: var(--ink);
+  outline: none;
+}
+.sortby option {
+  background: #0a0a0a;
+  color: var(--ink);
+}
 .selbtn[aria-pressed='true'] {
   background: var(--ink);
   color: var(--bg);
@@ -1254,7 +1275,10 @@ img {
   .lb .pill.tog { width: 42px; padding: 0; flex: none; }
   .lb .pill.tog span { display: none; }
   .lbbot .pill.solid { flex: 1; }
-  .barend { gap: 8px; }
+  .barend { gap: 8px; width: 100%; }
+  .barend .small { white-space: nowrap; margin-right: auto; }
+  .sortby { min-width: 0; }
+  .sortby select { max-width: 100%; text-overflow: ellipsis; }
   .selbar {
     bottom: calc(env(safe-area-inset-bottom, 0px) + 82px);
     border-radius: 22px;

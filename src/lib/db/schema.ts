@@ -22,6 +22,8 @@ export const albums = pgTable('albums', {
   driveFolderId: text('drive_folder_id').notNull(),
   driveFolderName: text('drive_folder_name').notNull().default(''),
   coverPhotoId: text('cover_photo_id'),
+  /** Michael set the photo order by hand in the Studio; syncs keep it. */
+  customOrder: boolean('custom_order').notNull().default(false),
   /** processing | live | error | closed */
   status: text('status').notNull().default('processing'),
   /** Bumped whenever the code changes: signs out every device on the old one. */
@@ -88,6 +90,8 @@ export const photos = pgTable(
     width: integer('width'),
     height: integer('height'),
     sort: integer('sort').notNull().default(0),
+    /** When the photo was taken (camera clock, stored as UTC); null if unknown */
+    takenAt: timestamp('taken_at', { withTimezone: true }),
     /** md5 of the original the current previews were made from; null = not processed yet */
     previewMd5: text('preview_md5'),
     previewVersion: integer('preview_version').notNull().default(0),

@@ -7,6 +7,7 @@ import type { Readable } from 'node:stream';
 import sharp from 'sharp';
 import type { DriveSource, DriveFolder, DriveImage, FolderHit, FolderListing, FolderScan } from './types';
 import { browseCompare, naturalCompare, sortChapters } from './names';
+import { exifTakenAt } from '@/lib/exif';
 
 /*
  * A stand-in for Google Drive that reads a folder on disk. The layout mirrors
@@ -104,6 +105,7 @@ export class MockDrive implements DriveSource {
         mime,
         size: buf.length,
         md5: crypto.createHash('md5').update(buf).digest('hex'),
+        takenAt: exifTakenAt((await sharp(buf).metadata().catch(() => null))?.exif),
       });
     }
     return out.sort((a, b) => naturalCompare(a.name, b.name));

@@ -11,6 +11,8 @@ export interface DriveImage {
   mime: string;
   size: number;
   md5: string | null;
+  /** When it was taken, from the photo's EXIF data, if known */
+  takenAt: Date | null;
 }
 
 export interface ScannedChapter {

@@ -8,6 +8,7 @@ import { albumState, daysLeft, deliveryEmail, fmt, local, stateLabel, TZ } from 
 import { categoryLabel, type Category } from '@/lib/categories';
 import { CategorySelect } from './CategorySelect';
 import { CodeField } from './CodeField';
+import { PhotoOrder } from './PhotoOrder';
 import { useToast } from './Toast';
 
 interface Props {
@@ -27,13 +28,14 @@ interface Props {
     publishError: string | null;
     driveFolderName: string;
     coverPhotoId: string | null;
-    cover: string | null;
+    customOrder: boolean;
   };
   categories: Category[];
   code: string;
   guestCode: string | null;
   counts: { unlocks: number; zips: number; singles: number };
-  photos: { id: string; name: string; thumb: string; chapter: string }[];
+  photos: { id: string; name: string; thumb: string; chapter: string; chapterId: string | null }[];
+  chapters: { id: string; name: string }[];
   favourites: string[];
   events: { id: number; type: string; detail: string; at: string }[];
 }
@@ -48,6 +50,7 @@ const EVENT_NAMES: Record<string, string> = {
   synced: 'Synced from Drive',
   extended: 'Extended',
   reopened: 'Reopened',
+  reordered: 'Reordered',
   closed: 'Closed',
   code_changed: 'Code changed',
 };
@@ -60,7 +63,7 @@ const when = (iso: string) => {
   return `${fmt(day).replace(/ \d{4}$/, '')}, ${hm}`;
 };
 
-export function AlbumDetail({ siteUrl, album: a, categories, code, guestCode, counts, photos, favourites, events }: Props) {
+export function AlbumDetail({ siteUrl, album: a, categories, code, guestCode, counts, photos, chapters, favourites, events }: Props) {
   const router = useRouter();
   const [toast, Toast] = useToast();
   const [pending, start] = useTransition();
@@ -108,7 +111,6 @@ export function AlbumDetail({ siteUrl, album: a, categories, code, guestCode, co
   return (
     <main>
       <div className="band">
-        {a.cover && <img src={a.cover} alt="" />}
         <div className="gut">
           <div>
             <h1>{a.name}</h1>
@@ -168,6 +170,7 @@ export function AlbumDetail({ siteUrl, album: a, categories, code, guestCode, co
               </div>
             ))}
           </div>
+          <PhotoOrder albumId={a.id} photos={photos} chapters={chapters} custom={a.customOrder} toast={toast} />
           <div className="panel">
             <div className="row">
               <h2>Client favourites</h2>

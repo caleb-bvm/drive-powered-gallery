@@ -150,9 +150,8 @@ export function AccessView() {
           <label htmlFor="c0">{t('label')}</label>
           <div className="boxes">
             {chars.map((ch, n) => (
-              <span key={n} style={{ display: 'contents' }}>
-                {n === 3 && <span />}
                 <input
+                  key={n}
                   id={`c${n}`}
                   ref={(el) => {
                     inputs.current[n] = el;
@@ -184,7 +183,6 @@ export function AccessView() {
                   }}
                   onFocus={(e) => e.target.select()}
                 />
-              </span>
             ))}
           </div>
           <p className={`msg${msg.err ? ' err' : ''}`} aria-live="polite">

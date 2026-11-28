@@ -14,7 +14,9 @@ import {
   getAlbum,
   logEvent,
   processAlbum,
+  resetPhotoOrder,
   setCode,
+  setPhotoOrder,
   syncAlbum,
   updateAlbumDetails,
   CodeError,
@@ -215,6 +217,30 @@ export async function sync(id: string): Promise<Result<{ added: number; removed:
   try {
     await requireAdmin();
     const r = await syncAlbum(id);
+    after(() => processAlbum(id));
+    revalidatePath(`/studio/albums/${id}`);
+    return { ok: true, ...r };
+  } catch (e) {
+    return fail(e);
+  }
+}
+
+export async function saveOrder(id: string, ids: string[]): Promise<Result> {
+  try {
+    await requireAdmin();
+    if (!Array.isArray(ids) || ids.length > 20000 || ids.some((x) => typeof x !== 'string')) return { ok: false, error: 'That order could not be read.' };
+    await setPhotoOrder(id, ids);
+    revalidatePath(`/studio/albums/${id}`);
+    return { ok: true };
+  } catch (e) {
+    return fail(e);
+  }
+}
+
+export async function resetOrder(id: string): Promise<Result<{ added: number; removed: number; changed: number }>> {
+  try {
+    await requireAdmin();
+    const r = await resetPhotoOrder(id);
     after(() => processAlbum(id));
     revalidatePath(`/studio/albums/${id}`);
     return { ok: true, ...r };

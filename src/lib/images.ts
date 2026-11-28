@@ -1,5 +1,6 @@
 import 'server-only';
 import sharp from 'sharp';
+import { exifTakenAt } from '@/lib/exif';
 
 sharp.cache(false);
 sharp.concurrency(2);
@@ -9,6 +10,8 @@ export interface Previews {
   sm: Buffer;
   width: number;
   height: number;
+  /** From the EXIF data, read before it is dropped */
+  takenAt: Date | null;
 }
 
 /**
@@ -23,7 +26,7 @@ export async function makePreviews(original: Buffer): Promise<Previews> {
   const rotated = (meta.orientation ?? 1) >= 5;
   const width = rotated ? meta.height ?? lg.info.height : meta.width ?? lg.info.width;
   const height = rotated ? meta.width ?? lg.info.width : meta.height ?? lg.info.height;
-  return { lg: lg.data, sm, width, height };
+  return { lg: lg.data, sm, width, height, takenAt: exifTakenAt(meta.exif) };
 }
 
 export async function streamToBuffer(stream: NodeJS.ReadableStream): Promise<Buffer> {
