@@ -5,6 +5,8 @@ export interface GPhoto {
   w: number;
   h: number;
   size: number;
+  /** ISO time the photo was taken, if known */
+  takenAt: string | null;
   sm: string;
   lg: string;
 }

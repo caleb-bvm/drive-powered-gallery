@@ -6,6 +6,7 @@ import { getStore, previewKey } from '@/lib/storage';
 import { makePreviews, streamToBuffer } from '@/lib/images';
 import { decrypt, encrypt, hmac, randomId } from '@/lib/crypto';
 import { isValidCodeFormat, normalizeCode } from '@/lib/codes';
+import { manualOrder, syncedOrder } from '@/lib/photo-order';
 
 export type AlbumRow = typeof schema.albums.$inferSelect;
 export type PhotoRow = typeof schema.photos.$inferSelect;
@@ -107,6 +108,7 @@ function photoRows(albumId: string, scan: FolderScan, chapterIds: Map<string, st
       mime: img.mime,
       sizeBytes: img.size,
       md5: img.md5,
+      takenAt: img.takenAt,
       sort: sort++,
     })),
   );
@@ -194,7 +196,14 @@ export async function processAlbum(albumId: string): Promise<void> {
         await store.put(previewKey(albumId, p.id, 'sm', version), pv.sm, 'image/webp');
         await db
           .update(schema.photos)
-          .set({ width: pv.width, height: pv.height, previewMd5: p.md5 ?? '', previewVersion: version, sizeBytes: p.sizeBytes || original.length })
+          .set({
+            width: pv.width,
+            height: pv.height,
+            previewMd5: p.md5 ?? '',
+            previewVersion: version,
+            sizeBytes: p.sizeBytes || original.length,
+            takenAt: p.takenAt ?? pv.takenAt,
+          })
           .where(eq(schema.photos.id, p.id));
       } catch (e) {
         failed++;
@@ -247,6 +256,9 @@ export async function syncAlbum(albumId: string): Promise<{ added: number; remov
 
   const byFile = new Map(existing.map((p) => [p.driveFileId, p]));
   const fresh = photoRows(albumId, scan, chapterIds);
+  // keep Michael's hand-set order: known photos stay put, new ones go at the end of their chapter
+  const order = syncedOrder(fresh, byFile, album.customOrder);
+  for (const f of fresh) f.sort = order.get(f.driveFileId) ?? f.sort;
   const seen = new Set(fresh.map((f) => f.driveFileId));
   const added = fresh.filter((f) => !byFile.has(f.driveFileId));
   const removed = existing.filter((p) => !seen.has(p.driveFileId));
@@ -267,7 +279,7 @@ export async function syncAlbum(albumId: string): Promise<{ added: number; remov
       if (old.md5 !== f.md5) changed++;
       await tx
         .update(schema.photos)
-        .set({ sort: f.sort, name: f.name, chapterId: f.chapterId, md5: f.md5, sizeBytes: f.sizeBytes })
+        .set({ sort: f.sort, name: f.name, chapterId: f.chapterId, md5: f.md5, sizeBytes: f.sizeBytes, takenAt: f.takenAt ?? old.takenAt })
         .where(eq(schema.photos.id, old.id));
     }
     if (added.length) await tx.insert(schema.photos).values(added);
@@ -288,6 +300,31 @@ export async function syncAlbum(albumId: string): Promise<{ added: number; remov
   });
   await logEvent(albumId, 'synced', `${added.length} added, ${removed.length} removed, ${changed} updated`);
   return { added: added.length, removed: removed.length, changed };
+}
+
+/* ---- photo order ------------------------------------------------------- */
+
+/** Save Michael's order. `ids` is every photo in the order he wants; each keeps its chapter. */
+export async function setPhotoOrder(albumId: string, ids: string[]) {
+  const db = await getDb();
+  await db.transaction(async (tx) => {
+    const photos = await tx.select().from(schema.photos).where(eq(schema.photos.albumId, albumId));
+    const chapters = await tx.select().from(schema.chapters).where(eq(schema.chapters.albumId, albumId)).orderBy(asc(schema.chapters.sort));
+    const order = manualOrder(photos, ids, chapters.map((c) => c.id));
+    for (const p of photos) {
+      const sort = order.get(p.id);
+      if (sort !== undefined && sort !== p.sort) await tx.update(schema.photos).set({ sort }).where(eq(schema.photos.id, p.id));
+    }
+    await tx.update(schema.albums).set({ customOrder: true, updatedAt: new Date() }).where(eq(schema.albums.id, albumId));
+  });
+  await logEvent(albumId, 'reordered', 'Photo order set in the Studio');
+}
+
+/** Back to the Drive order (by file name), then pick up anything new in Drive. */
+export async function resetPhotoOrder(albumId: string) {
+  const db = await getDb();
+  await db.update(schema.albums).set({ customOrder: false }).where(eq(schema.albums.id, albumId));
+  return syncAlbum(albumId);
 }
 
 /* ---- lifecycle --------------------------------------------------------- */

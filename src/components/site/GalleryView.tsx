@@ -4,6 +4,7 @@ import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } fr
 import { useFormatter, useTranslations } from 'next-intl';
 import type { GalleryData, GPhoto } from '@/lib/gallery-types';
 import { splitParts } from '@/lib/zipparts';
+import { sortForClient, type ClientSort } from '@/lib/photo-order';
 import { IconCheck, IconClose, IconDown, IconHeart } from '@/components/icons';
 import { FLASH_FLAG } from './AccessView';
 import { Viewer } from './Viewer';
@@ -11,6 +12,9 @@ import { Viewer } from './Viewer';
 /** Marks the history entry pushed while the viewer is open, so Back closes it. */
 const VIEWER_STATE = 'mgViewer';
 const LONG_PRESS_MS = 450;
+/** The client's sort choice, kept on their device only. */
+const SORT_KEY = 'mg-sort';
+const SORTS: ClientSort[] = ['album', 'taken', 'name'];
 const human = (b: number) => (b >= 1024 ** 3 ? `${(b / 1024 ** 3).toFixed(1)} GB` : `${Math.max(0.1, b / 1024 ** 2).toFixed(0)} MB`);
 
 function startDownload(href: string) {
@@ -27,6 +31,23 @@ export function GalleryView({ data }: { data: GalleryData }) {
   const t = useTranslations('gallery');
   const format = useFormatter();
   const [filter, setFilter] = useState<string>('all');
+  const hasDates = useMemo(() => data.photos.some((p) => p.takenAt), [data.photos]);
+  const sorts = SORTS.filter((s) => s !== 'taken' || hasDates);
+  const [sortBy, setSortBy] = useState<ClientSort>('album');
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem(SORT_KEY) as ClientSort | null;
+      if (saved && sorts.includes(saved)) setSortBy(saved);
+    } catch {}
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+  const changeSort = (s: ClientSort) => {
+    setSortBy(s);
+    try {
+      if (s === 'album') localStorage.removeItem(SORT_KEY);
+      else localStorage.setItem(SORT_KEY, s);
+    } catch {}
+  };
   const [favs, setFavs] = useState<Set<string>>(() => new Set(data.favourites));
   const [lb, setLb] = useState<number | null>(null);
   const [zip, setZip] = useState<null | 'all' | 'favs' | 'sel'>(null);
@@ -50,10 +71,10 @@ export function GalleryView({ data }: { data: GalleryData }) {
   const canDownload = data.role === 'client';
   const chapterName = useCallback((id: string | null) => data.chapters.find((c) => c.id === id)?.name ?? '', [data.chapters]);
 
+  const sorted = useMemo(() => sortForClient(data.photos, sortBy), [data.photos, sortBy]);
   const shown = useMemo(
-    () =>
-      data.photos.filter((p) => (filter === 'all' ? true : filter === 'favs' ? favs.has(p.id) : p.chapterId === filter)),
-    [data.photos, filter, favs],
+    () => sorted.filter((p) => (filter === 'all' ? true : filter === 'favs' ? favs.has(p.id) : p.chapterId === filter)),
+    [sorted, filter, favs],
   );
 
   const say = (s: string) => {
@@ -324,6 +345,16 @@ export function GalleryView({ data }: { data: GalleryData }) {
             ))}
           </div>
           <div className="barend">
+            <label className="sortby">
+              <span className="sr">{t('sortLabel')}</span>
+              <select value={sortBy} onChange={(e) => changeSort(e.target.value as ClientSort)} aria-label={t('sortLabel')}>
+                {sorts.map((s) => (
+                  <option key={s} value={s}>
+                    {t(s === 'album' ? 'sortAlbum' : s === 'taken' ? 'sortTaken' : 'sortName')}
+                  </option>
+                ))}
+              </select>
+            </label>
             <span className="small">
               {filter === 'all'
                 ? t('showing', { count: shown.length })

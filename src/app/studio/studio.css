@@ -158,8 +158,7 @@ button{cursor:pointer}
 .mail{background:#0a0a0a;border:1px solid #333;border-radius:4px;padding:14px 16px;font-size:14px;white-space:pre-wrap;color:#ddd;margin:14px 0;max-height:220px;overflow:auto}
 .acts{display:flex;gap:10px;flex-wrap:wrap}
 /* album detail */
-.band{position:relative;height:clamp(220px,34vw,360px);background:#111 center/cover;display:flex;align-items:flex-end}
-.band::before{content:"";position:absolute;inset:0;background:linear-gradient(0deg,#0a0a0a 0%,#0a0a0a00 70%)}
+.band{position:relative;padding-top:clamp(28px,5vw,56px);border-bottom:1px solid var(--line);display:flex;align-items:flex-end}
 .band>div{position:relative;width:100%;padding-bottom:20px;display:flex;justify-content:space-between;align-items:end;gap:16px;flex-wrap:wrap}
 .band h1{font-size:clamp(40px,6vw,76px)}
 .back{display:inline-flex;align-items:center;gap:6px;color:var(--mute);text-decoration:none;font-size:14px;margin:18px 0 0}
@@ -238,8 +237,8 @@ td.t{white-space:nowrap;color:var(--mute);font-variant-numeric:tabular-nums}
 .loading{color:var(--mute);font-size:14px;padding:10px 0}
 .thumb img{width:100%;height:100%;object-fit:cover;border-radius:3px;display:block}
 .thumb{overflow:visible}
-.cv img,.band img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
-.cv,.band{overflow:hidden}
+.cv img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.cv{overflow:hidden}
 .favs .fi{aspect-ratio:4/5;border-radius:3px;overflow:hidden;background:#1a1a1a}
 .favs .fi img{width:100%;height:100%;object-fit:cover;display:block}
 .item .im{overflow:hidden;position:relative}
@@ -273,3 +272,20 @@ td.t{white-space:nowrap;color:var(--mute);font-variant-numeric:tabular-nums}
 .catlist .acts{display:flex;gap:6px;flex-wrap:wrap}
 .catlist li.editing{display:grid;gap:14px}
 .cats .chaps{margin-top:18px}
+/* photo order */
+.otools{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;min-height:34px;margin-bottom:10px}
+.otools b{color:var(--ink);font-weight:500}
+.otools .copy:disabled{opacity:.35;cursor:default}
+.order .seg{border-radius:22px}
+.seg button small{color:inherit;opacity:.6;margin-left:4px;font-size:12px}
+.ogrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(96px,1fr));gap:8px;user-select:none;-webkit-user-select:none}
+.otile{position:relative;aspect-ratio:3/2;border-radius:3px;overflow:hidden;background:#1a1a1a;cursor:grab;-webkit-touch-callout:none;outline:none;transition:opacity .15s}
+.otile img{width:100%;height:100%;object-fit:cover;display:block;pointer-events:none}
+.otile i{position:absolute;left:4px;top:4px;min-width:20px;padding:1px 5px;border-radius:999px;background:#0a0a0acc;color:var(--ink);font:500 11px/16px var(--sans,inherit);font-style:normal;text-align:center;font-variant-numeric:tabular-nums}
+.otile[aria-selected=true]{box-shadow:0 0 0 2px var(--ink)}
+.otile:focus-visible{box-shadow:0 0 0 2px var(--ink),0 0 0 4px #0a0a0a}
+.ogrid.dragging .otile{cursor:grabbing}
+.otile[data-drag]{opacity:.25}
+.oghost{position:fixed;left:0;top:0;z-index:80;width:120px;aspect-ratio:3/2;border-radius:4px;overflow:hidden;pointer-events:none;box-shadow:0 12px 32px #000c,0 0 0 1px #fff6;transform:translate(-200px,-200px)}
+.oghost img{width:100%;height:100%;object-fit:cover;display:block}
+@media(max-width:600px){.ogrid{grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}}

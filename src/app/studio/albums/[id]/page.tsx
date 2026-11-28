@@ -22,7 +22,6 @@ export default async function AlbumPage({ params }: { params: Promise<{ id: stri
   ]);
   const ready = photos.filter((p) => p.previewVersion > 0);
   const thumbs = Object.fromEntries(ready.map((p) => [p.id, previewUrl(p.id, 'sm', p.previewVersion)]));
-  const cover = ready.find((p) => p.id === album.coverPhotoId);
 
   return (
     <AlbumDetail
@@ -42,13 +41,14 @@ export default async function AlbumPage({ params }: { params: Promise<{ id: stri
         publishError: album.publishError,
         driveFolderName: album.driveFolderName,
         coverPhotoId: album.coverPhotoId,
-        cover: cover ? previewUrl(cover.id, 'lg', cover.previewVersion) : null,
+        customOrder: album.customOrder,
       }}
       categories={categories}
       code={codes.client ?? ''}
       guestCode={codes.guest}
       counts={{ unlocks: counts.unlock ?? 0, zips: counts.zip ?? 0, singles: counts.download ?? 0 }}
-      photos={ready.map((p) => ({ id: p.id, name: p.name, thumb: thumbs[p.id], chapter: chapters.find((c) => c.id === p.chapterId)?.name ?? '' }))}
+      photos={ready.map((p) => ({ id: p.id, name: p.name, thumb: thumbs[p.id], chapter: chapters.find((c) => c.id === p.chapterId)?.name ?? '', chapterId: p.chapterId }))}
+      chapters={chapters.map((c) => ({ id: c.id, name: c.name }))}
       favourites={favourites}
       events={events.map((e) => ({ id: e.id, type: e.type, detail: e.detail, at: e.createdAt.toISOString() }))}
     />

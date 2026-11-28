@@ -5,6 +5,7 @@ import { GoogleAuth } from 'google-auth-library';
 import type { DriveSource, DriveFolder, DriveImage, FolderHit, FolderListing, FolderScan } from './types';
 import { IMAGE_MIME } from './types';
 import { browseCompare, naturalCompare, sortChapters } from './names';
+import { parseExifTime } from '@/lib/exif';
 
 /*
  * Google Drive through a service account. Michael shares his photo library
@@ -48,7 +49,7 @@ export class GoogleDrive implements DriveSource {
       const res = await this.withRetry(() =>
         this.api.files.list({
           q: `'${literal(parentId)}' in parents and trashed = false`,
-          fields: 'nextPageToken, files(id, name, mimeType, size, md5Checksum)',
+          fields: 'nextPageToken, files(id, name, mimeType, size, md5Checksum, imageMediaMetadata(time))',
           pageSize: 1000,
           pageToken,
           supportsAllDrives: true,
@@ -151,7 +152,7 @@ export class GoogleDrive implements DriveSource {
   private toImages(files: drive_v3.Schema$File[]): DriveImage[] {
     return files
       .filter((f) => f.mimeType && IMAGE_MIME.has(f.mimeType))
-      .map((f) => ({ id: f.id!, name: f.name ?? f.id!, mime: f.mimeType!, size: Number(f.size ?? 0), md5: f.md5Checksum ?? null }))
+      .map((f) => ({ id: f.id!, name: f.name ?? f.id!, mime: f.mimeType!, size: Number(f.size ?? 0), md5: f.md5Checksum ?? null, takenAt: parseExifTime(f.imageMediaMetadata?.time) }))
       .sort((a, b) => naturalCompare(a.name, b.name));
   }
 

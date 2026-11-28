@@ -41,6 +41,7 @@ export default async function GalleryPage({ params }: { params: Promise<{ locale
       w: p.width ?? 3,
       h: p.height ?? 2,
       size: p.sizeBytes,
+      takenAt: p.takenAt ? p.takenAt.toISOString() : null,
       sm: previewUrl(p.id, 'sm', p.previewVersion, now),
       lg: previewUrl(p.id, 'lg', p.previewVersion, now),
     })),
