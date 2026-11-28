@@ -84,6 +84,25 @@
     "started": "Descarga iniciada",
     "singleStarted": "Tu original se está descargando.",
     "leave": "Salir de la galería",
-    "keys": "Flechas para navegar, F para favorita, Esc para cerrar."
+    "keys": "Flechas para navegar, rueda, clic o doble toque para acercar, F para favorita, S para seleccionar, Esc para cerrar.",
+    "zoom": "Zoom",
+    "zoomIn": "Acercar",
+    "zoomOut": "Alejar",
+    "zoomFit": "Ver la fotografía completa",
+    "select": "Seleccionar",
+    "selected": "Seleccionada",
+    "selectDone": "Listo",
+    "selectPhoto": "Seleccionar {name}",
+    "selection": "Selección",
+    "selectExit": "Salir de la selección",
+    "selectedCount": "{count, plural, =0 {Ninguna seleccionada} one {# seleccionada} other {# seleccionadas}}",
+    "selectHint": "Toca o haz clic en las fotografías que quieras.",
+    "selectAll": "Seleccionar todas",
+    "selectNone": "Quitar selección",
+    "downloadSel": "Descargar ({count})",
+    "zipSelTitle": "Descargar tu selección",
+    "favSelDone": "{count, plural, one {# añadida a favoritas} other {# añadidas a favoritas}}",
+    "unfavSelDone": "{count, plural, one {# quitada de favoritas} other {# quitadas de favoritas}}",
+    "saveFailed": "No se pudo guardar. Inténtalo de nuevo."
   }
 }

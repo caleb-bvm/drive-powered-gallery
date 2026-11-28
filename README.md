@@ -6,8 +6,10 @@ client access key.
 
 - **Public site**: hero slideshow, selected work, About, contact. Spanish at `/`, English at `/en`.
 - **Client area**: a 6-character code opens a private gallery. The cover develops out of
-  black, then a camera flash leads into the gallery: chapters, viewer, favourites, and
-  downloads of the untouched originals (single files or ZIPs in ~2 GB parts).
+  black, then a camera flash leads into the gallery: chapters, a full-screen viewer
+  (whole photos, pinch/double-tap/scroll zoom, swipe, Back closes it), favourites, picking
+  photos to download, and downloads of the untouched originals (single files or ZIPs in
+  ~2 GB parts).
 - **Studio** (`/studio`, English): albums from Drive folders, codes, expiry, activity,
   photography categories, and editing the main page in both languages.
 
