@@ -4,13 +4,15 @@ import { requireAdminPage } from '@/lib/admin';
 import { listAlbums } from '@/lib/albums';
 import { getDb, schema } from '@/lib/db';
 import { previewUrl } from '@/lib/session';
+import { allCategories } from '@/lib/categories-db';
+import { categoryLabel } from '@/lib/categories';
 import { AlbumsGrid, type AlbumCard } from '@/components/studio/AlbumsGrid';
 
 export const metadata = { title: 'Albums' };
 
 export default async function AlbumsPage() {
   await requireAdminPage();
-  const albums = await listAlbums();
+  const [albums, categories] = await Promise.all([listAlbums(), allCategories()]);
   const coverIds = albums.map((a) => a.coverPhotoId).filter((x): x is string => !!x);
   const db = await getDb();
   const covers = coverIds.length ? await db.select().from(schema.photos).where(inArray(schema.photos.id, coverIds)) : [];
@@ -20,6 +22,7 @@ export default async function AlbumsPage() {
       id: a.id,
       name: a.name,
       eventType: a.eventType,
+      category: categoryLabel(a.eventType, 'en', categories),
       eventDate: a.eventDate,
       status: a.status,
       expiresAt: a.expiresAt.toISOString(),

@@ -22,7 +22,6 @@ function startDownload(href: string) {
 
 export function GalleryView({ data }: { data: GalleryData }) {
   const t = useTranslations('gallery');
-  const te = useTranslations('events');
   const format = useFormatter();
   const [filter, setFilter] = useState<string>('all');
   const [favs, setFavs] = useState<Set<string>>(() => new Set(data.favourites));
@@ -176,7 +175,7 @@ export function GalleryView({ data }: { data: GalleryData }) {
   const parts = splitParts(zipSet.map((p) => ({ ...p, sizeBytes: p.size })));
   const longDate = (iso: string, utc = false) =>
     format.dateTime(new Date(iso), { day: 'numeric', month: 'long', year: 'numeric', ...(utc ? { timeZone: 'UTC' } : {}) });
-  const event = te.has(data.eventType as 'wedding') ? te(data.eventType as 'wedding') : te('other');
+  const event = data.eventLabel;
   const meta = data.eventDate
     ? data.place
       ? t('metaPlace', { event, place: data.place, date: longDate(data.eventDate, true) })

@@ -12,6 +12,8 @@ export interface GPhoto {
 export interface GalleryData {
   name: string;
   eventType: string;
+  /** Category name in the visitor's language. */
+  eventLabel: string;
   eventDate: string | null;
   place: string;
   expiresAt: string;

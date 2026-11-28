@@ -151,3 +151,11 @@ export const media = pgTable('media', {
   height: integer('height').notNull(),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
 });
+
+/** Categories Michael adds in the Studio, on top of the built-in list in src/lib/categories.ts. */
+export const categories = pgTable('categories', {
+  id: text('id').primaryKey(),
+  es: text('es').notNull(),
+  en: text('en').notNull().default(''),
+  createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+});

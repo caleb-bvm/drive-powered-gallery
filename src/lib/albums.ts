@@ -12,9 +12,6 @@ export type PhotoRow = typeof schema.photos.$inferSelect;
 
 export const codeHash = (code: string) => hmac('access-code', normalizeCode(code));
 
-export const EVENT_TYPES = ['wedding', 'xv', 'portrait', 'family', 'commercial', 'other'] as const;
-export type EventType = (typeof EVENT_TYPES)[number];
-
 export async function logEvent(albumId: string, type: string, detail = '') {
   const db = await getDb();
   await db.insert(schema.events).values({ albumId, type, detail: detail.slice(0, 300) });
@@ -80,7 +77,8 @@ export async function setCode(albumId: string, role: 'client' | 'guest', rawCode
 
 export interface NewAlbumInput {
   name: string;
-  eventType: EventType;
+  /** A category id from src/lib/categories.ts or one added in the Studio. */
+  eventType: string;
   eventDate: string | null;
   place: string;
   driveFolderId: string;
@@ -325,7 +323,8 @@ export async function deleteAlbum(albumId: string) {
 
 export async function updateAlbumDetails(
   albumId: string,
-  data: { name: string; eventType: EventType; eventDate: string | null; place: string; coverPhotoId: string | null; allowZip: boolean; emailLang: 'es' | 'en' },
+  data: { name: string; /** A category id from src/lib/categories.ts or one added in the Studio. */
+  eventType: string; eventDate: string | null; place: string; coverPhotoId: string | null; allowZip: boolean; emailLang: 'es' | 'en' },
 ) {
   const db = await getDb();
   await db

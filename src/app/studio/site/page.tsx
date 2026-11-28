@@ -1,12 +1,13 @@
 import { requireAdminPage } from '@/lib/admin';
 import { getContent } from '@/lib/content';
+import { allCategories } from '@/lib/categories-db';
 import { SiteEditor } from '@/components/studio/SiteEditor';
 
 export const metadata = { title: 'Main page' };
 
 export default async function SitePage() {
   await requireAdminPage();
-  const content = await getContent();
+  const [content, categories] = await Promise.all([getContent(), allCategories()]);
   return (
     <main className="gut">
       <div className="head">
@@ -15,7 +16,7 @@ export default async function SitePage() {
           <p>Edit the public site. Spanish is the main language; leave English empty and it falls back to Spanish.</p>
         </div>
       </div>
-      <SiteEditor initial={content} />
+      <SiteEditor initial={content} categories={categories} />
     </main>
   );
 }

@@ -18,9 +18,9 @@ import {
   syncAlbum,
   updateAlbumDetails,
   CodeError,
-  EVENT_TYPES,
-  type EventType,
 } from '@/lib/albums';
+import { addCategory, CategoryError, deleteCategory, renameCategory, validCategory } from '@/lib/categories-db';
+import type { Category } from '@/lib/categories';
 import { checkCodeLocally, normalizeCode } from '@/lib/codes';
 import { saveContent } from '@/lib/content';
 import type { Img, SiteContent } from '@/lib/content-types';
@@ -36,7 +36,7 @@ import { isBlocked, recordAttempt } from '@/lib/ratelimit';
 type Result<T = object> = ({ ok: true } & T) | { ok: false; error: string };
 
 const fail = (e: unknown): { ok: false; error: string } => {
-  if (e instanceof CodeError) return { ok: false, error: e.message };
+  if (e instanceof CodeError || e instanceof CategoryError) return { ok: false, error: e.message };
   console.error('[studio]', e);
   return { ok: false, error: e instanceof Error ? e.message : 'Something went wrong.' };
 };
@@ -136,7 +136,7 @@ export async function publishAlbum(input: PublishInput): Promise<Result<{ id: st
     const days = [30, 60, 90, 180].includes(input.days) ? input.days : 90;
     const id = await createAlbum({
       name: input.name,
-      eventType: (EVENT_TYPES as readonly string[]).includes(input.eventType) ? (input.eventType as EventType) : 'other',
+      eventType: await validCategory(input.eventType),
       eventDate: /^\d{4}-\d{2}-\d{2}$/.test(input.eventDate) ? input.eventDate : null,
       place: input.place,
       driveFolderId: input.driveFolderId,
@@ -225,7 +225,7 @@ export async function saveDetails(
     if (!d.name.trim()) return { ok: false, error: 'Names cannot be empty.' };
     await updateAlbumDetails(id, {
       name: d.name,
-      eventType: (EVENT_TYPES as readonly string[]).includes(d.eventType) ? (d.eventType as EventType) : 'other',
+      eventType: await validCategory(d.eventType),
       eventDate: /^\d{4}-\d{2}-\d{2}$/.test(d.eventDate) ? d.eventDate : null,
       place: d.place,
       coverPhotoId: d.coverPhotoId,
@@ -244,6 +244,46 @@ export async function removeAlbum(id: string): Promise<Result> {
     await requireAdmin();
     await deleteAlbum(id);
     revalidatePath('/studio');
+    return { ok: true };
+  } catch (e) {
+    return fail(e);
+  }
+}
+
+/* ---- categories -------------------------------------------------------- */
+
+const revalidateCategories = () => {
+  revalidatePath('/studio', 'layout');
+  revalidatePath('/', 'layout');
+};
+
+export async function createCategory(es: string, en: string): Promise<Result<{ category: Category }>> {
+  try {
+    await requireAdmin();
+    const category = await addCategory(es, en);
+    revalidateCategories();
+    return { ok: true, category };
+  } catch (e) {
+    return fail(e);
+  }
+}
+
+export async function updateCategory(id: string, es: string, en: string): Promise<Result> {
+  try {
+    await requireAdmin();
+    await renameCategory(id, es, en);
+    revalidateCategories();
+    return { ok: true };
+  } catch (e) {
+    return fail(e);
+  }
+}
+
+export async function removeCategory(id: string): Promise<Result> {
+  try {
+    await requireAdmin();
+    await deleteCategory(id);
+    revalidateCategories();
     return { ok: true };
   } catch (e) {
     return fail(e);

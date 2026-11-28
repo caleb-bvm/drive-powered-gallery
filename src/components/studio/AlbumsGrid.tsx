@@ -2,13 +2,15 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { albumState, EVENT_LABELS, fmt, stateLabel, type AlbumState } from '@/lib/studio-format';
+import { albumState, fmt, stateLabel, type AlbumState } from '@/lib/studio-format';
 import { useToast } from './Toast';
 
 export interface AlbumCard {
   id: string;
   name: string;
   eventType: string;
+  /** Category name as shown in the Studio. */
+  category: string;
   eventDate: string | null;
   status: string;
   expiresAt: string;
@@ -85,7 +87,7 @@ export function AlbumsGrid({ albums }: { albums: AlbumCard[] }) {
               <div className="bd">
                 <h3>{a.name}</h3>
                 <div className="meta">
-                  {EVENT_LABELS[a.eventType] ?? 'Other'}
+                  {a.category}
                   {a.eventDate ? `, ${fmt(a.eventDate)}` : ''}. {a.photoCount} photos
                 </div>
                 <div className="row">

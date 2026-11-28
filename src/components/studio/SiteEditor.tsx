@@ -4,6 +4,7 @@ import { useId, useMemo, useState, useTransition } from 'react';
 import { saveSite, uploadImage } from '@/app/studio/actions';
 import type { Bi, Focus, Img, SiteContent } from '@/lib/content-types';
 import { focusPosition, isMediaSrc, mediaUrl } from '@/lib/site-images';
+import type { Category } from '@/lib/categories';
 import { useToast } from './Toast';
 
 const TABS = [
@@ -27,11 +28,12 @@ const move = <T,>(arr: T[], i: number, d: number) => {
   return a;
 };
 
-export function SiteEditor({ initial }: { initial: SiteContent }) {
+export function SiteEditor({ initial, categories }: { initial: SiteContent; categories: Category[] }) {
   const [saved, setSaved] = useState(() => clone(initial));
   const [c, setC] = useState(() => clone(initial));
   const [tab, setTab] = useState<Tab>('hero');
   const [toast, Toast] = useToast();
+  const listId = useId();
   const [pending, start] = useTransition();
   const [uploading, setUploading] = useState('');
   const [error, setError] = useState('');
@@ -126,7 +128,7 @@ export function SiteEditor({ initial }: { initial: SiteContent }) {
                 />
                 <div style={{ display: 'grid', gap: 12 }}>
                   <Pair label="Title" v={w.title} on={(v) => set((d) => (d.work.pieces[i].title = v))} />
-                  <Pair label="Type and year" v={w.meta} on={(v) => set((d) => (d.work.pieces[i].meta = v))} />
+                  <Pair label="Type and year" v={w.meta} list={listId} on={(v) => set((d) => (d.work.pieces[i].meta = v))} />
                 </div>
                 <Order i={i} n={c.work.pieces.length} onMove={(dd) => set((d) => (d.work.pieces = move(d.work.pieces, i, dd)))} onRemove={c.work.pieces.length > 1 ? () => set((d) => d.work.pieces.splice(i, 1)) : undefined} />
               </div>
@@ -209,12 +211,19 @@ export function SiteEditor({ initial }: { initial: SiteContent }) {
           </button>
         </div>
       </div>
+      {(['es', 'en'] as const).map((lang) => (
+        <datalist key={lang} id={`${listId}-${lang}`}>
+          {categories.map((cat) => (
+            <option key={cat.id} value={lang === 'en' ? cat.en || cat.es : cat.es} />
+          ))}
+        </datalist>
+      ))}
       {Toast}
     </>
   );
 }
 
-function Pair({ label, v, on, area }: { label: string; v: Bi; on: (v: Bi) => void; area?: boolean }) {
+function Pair({ label, v, on, area, list }: { label: string; v: Bi; on: (v: Bi) => void; area?: boolean; list?: string }) {
   const uid = useId();
   const field = (lang: 'es' | 'en') => {
     const id = `${uid}-${lang}`;
@@ -230,7 +239,7 @@ function Pair({ label, v, on, area }: { label: string; v: Bi; on: (v: Bi) => voi
           <b>{lang.toUpperCase()}</b>
           {label}
         </label>
-        {area ? <textarea {...props} /> : <input {...props} />}
+        {area ? <textarea {...props} /> : <input {...props} list={list ? `${list}-${lang}` : undefined} />}
       </div>
     );
   };

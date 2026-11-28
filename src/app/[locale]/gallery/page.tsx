@@ -4,6 +4,8 @@ import { redirect } from '@/i18n/navigation';
 import { currentGallery, previewUrl } from '@/lib/session';
 import { getAlbumPhotos } from '@/lib/albums';
 import type { GalleryData } from '@/lib/gallery-types';
+import { allCategories } from '@/lib/categories-db';
+import { categoryLabel } from '@/lib/categories';
 import { GalleryView } from '@/components/site/GalleryView';
 
 export async function generateMetadata({ params }: { params: Promise<{ locale: string }> }): Promise<Metadata> {
@@ -19,12 +21,13 @@ export default async function GalleryPage({ params }: { params: Promise<{ locale
   if (!g) return redirect({ href: '/access', locale });
 
   const { album, role } = g;
-  const { chapters, photos, favourites } = await getAlbumPhotos(album.id);
+  const [{ chapters, photos, favourites }, categories] = await Promise.all([getAlbumPhotos(album.id), allCategories()]);
   const ready = photos.filter((p) => p.previewVersion > 0);
   const now = Date.now();
   const data: GalleryData = {
     name: album.name,
     eventType: album.eventType,
+    eventLabel: categoryLabel(album.eventType, locale, categories),
     eventDate: album.eventDate,
     place: album.place,
     expiresAt: album.expiresAt.toISOString(),
