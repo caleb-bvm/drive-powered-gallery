@@ -110,6 +110,10 @@ button{cursor:pointer}
 .chaps span{border:1px solid #3a3a3a;border-radius:999px;padding:6px 12px;font-size:14px}
 .chaps span.lbl{border:0;padding:0;width:100%}
 .chaps em{font-style:normal;color:var(--mute);margin-left:6px}
+.covtabs{display:flex;flex-wrap:wrap;margin-bottom:12px;border-radius:14px;width:fit-content;max-width:100%}
+.covtabs em{font-style:normal;color:var(--mute);margin-left:4px}
+.covmore{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:12px}
+.covmore .small{margin:0}
 .thumbs{display:grid;grid-template-columns:repeat(auto-fill,minmax(110px,1fr));gap:8px}
 .thumb{position:relative;aspect-ratio:1;border:0;padding:0;background:#1a1a1a center/cover;border-radius:3px;outline:2px solid transparent;outline-offset:2px}
 .thumb[aria-pressed=true]{outline-color:var(--ink)}
