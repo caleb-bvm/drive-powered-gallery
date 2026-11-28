@@ -1,10 +1,35 @@
-import Image from 'next/image';
 import { getTranslations, setRequestLocale } from 'next-intl/server';
 import { getContent } from '@/lib/content';
 import { pick } from '@/lib/content-types';
 import { Hero } from '@/components/site/Hero';
+import { SiteImage } from '@/components/site/SiteImage';
+import { coverScale } from '@/lib/site-images';
+import type { Img } from '@/lib/content-types';
 import { Develop } from '@/components/site/Develop';
 import { IconCamera } from '@/components/icons';
+
+/* Frame shape and share of the 12-column spread for .p1 to .p7 (site.css). */
+const PIECES = [
+  { ratio: 3 / 2, cols: 7 },
+  { ratio: 4 / 5, cols: 4 },
+  { ratio: 4 / 5, cols: 4 },
+  { ratio: 3 / 2, cols: 7 },
+  { ratio: 16 / 9, cols: 6 },
+  { ratio: 4 / 3, cols: 6 },
+  { ratio: 4 / 3, cols: 6 },
+];
+
+/** A 3:2 photo in a 4:5 frame is drawn wider than the frame; ask for a file that covers it. */
+function pieceSizes(img: Img, i: number) {
+  const { ratio, cols } = PIECES[i % PIECES.length];
+  const k = coverScale(img, ratio);
+  return `(max-width: 860px) ${Math.round(100 * k)}vw, ${Math.round((100 * cols * k) / 12)}vw`;
+}
+
+function portraitSizes(img: Img) {
+  const k = coverScale(img, 4 / 5);
+  return `(max-width: 860px) ${Math.round(420 * k)}px, ${Math.round(42 * k)}vw`;
+}
 
 export default async function Home({ params }: { params: Promise<{ locale: string }> }) {
   const { locale } = await params;
@@ -21,7 +46,7 @@ export default async function Home({ params }: { params: Promise<{ locale: strin
         label={t('heroLabel')}
         title={p(c.hero.title)}
         line={p(c.hero.line)}
-        slides={c.hero.slides.map((s) => ({ src: s.img.src, caption: p(s.caption) }))}
+        slides={c.hero.slides.map((s) => ({ img: s.img, caption: p(s.caption) }))}
       />
 
       <section className="sec gut" id="series">
@@ -33,7 +58,7 @@ export default async function Home({ params }: { params: Promise<{ locale: strin
           {c.work.pieces.map((w, i) => (
             <figure key={w.img.src + i} className={`piece p${(i % 7) + 1}`}>
               <Develop className="frame">
-                <Image src={w.img.src} alt={p(w.title)} fill sizes="(max-width: 860px) 100vw, 60vw" quality={80} />
+                <SiteImage img={w.img} alt={p(w.title)} sizes={pieceSizes(w.img, i)} quality={80} />
               </Develop>
               <figcaption>
                 <b>{p(w.title)}</b>
@@ -48,7 +73,7 @@ export default async function Home({ params }: { params: Promise<{ locale: strin
         <div className="in">
           {c.about.portrait ? (
             <figure className="me">
-              <Image src={c.about.portrait.src} alt={t('portraitPlaceholder')} fill sizes="(max-width: 860px) 100vw, 40vw" />
+              <SiteImage img={c.about.portrait} alt={t('portraitPlaceholder')} sizes={portraitSizes(c.about.portrait)} />
             </figure>
           ) : (
             <figure className="me empty" aria-label={t('portraitPlaceholder')}>

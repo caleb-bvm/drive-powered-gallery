@@ -2,7 +2,8 @@
 
 import { useId, useMemo, useState, useTransition } from 'react';
 import { saveSite, uploadImage } from '@/app/studio/actions';
-import type { Bi, Img, SiteContent } from '@/lib/content-types';
+import type { Bi, Focus, Img, SiteContent } from '@/lib/content-types';
+import { focusPosition, isMediaSrc, mediaUrl } from '@/lib/site-images';
 import { useToast } from './Toast';
 
 const TABS = [
@@ -87,10 +88,15 @@ export function SiteEditor({ initial }: { initial: SiteContent }) {
             </section>
             <section className="step">
               <h2>Slideshow</h2>
-              <p>Crossfades every 6 seconds, in this order. Landscape photos work best.</p>
+              <p>Crossfades every 6 seconds, in this order. Made for 3:2 camera photos: wide screens show nearly the whole frame, phones show a crop. Click a photo to mark what must stay in frame.</p>
               {c.hero.slides.map((s, i) => (
                 <div className="item" key={s.img.src + i}>
-                  <ImageSlot img={s.img} busy={uploading === `hero${i}`} onFile={(f) => upload(`hero${i}`, f, (img) => set((d) => (d.hero.slides[i].img = img)))} />
+                  <ImageSlot
+                    img={s.img}
+                    busy={uploading === `hero${i}`}
+                    onFile={(f) => upload(`hero${i}`, f, (img) => set((d) => (d.hero.slides[i].img = img)))}
+                    onFocus={(focus) => set((d) => (d.hero.slides[i].img.focus = focus))}
+                  />
                   <Pair label="Caption" v={s.caption} on={(v) => set((d) => (d.hero.slides[i].caption = v))} />
                   <Order i={i} n={c.hero.slides.length} onMove={(dd) => set((d) => (d.hero.slides = move(d.hero.slides, i, dd)))} onRemove={c.hero.slides.length > 1 ? () => set((d) => d.hero.slides.splice(i, 1)) : undefined} />
                 </div>
@@ -108,11 +114,16 @@ export function SiteEditor({ initial }: { initial: SiteContent }) {
         {tab === 'work' && (
           <section className="step">
             <h2>Selected work</h2>
-            <p>The editorial spread. The first piece is the largest; five pieces fill the layout best.</p>
+            <p>The editorial spread. The first piece is the largest; five pieces fill the layout best. Click a photo to mark what must stay in frame when it&apos;s cropped.</p>
             <Pair label="Line beside the heading" v={c.work.intro} on={(v) => set((d) => (d.work.intro = v))} />
             {c.work.pieces.map((w, i) => (
               <div className="item" key={w.img.src + i}>
-                <ImageSlot img={w.img} busy={uploading === `work${i}`} onFile={(f) => upload(`work${i}`, f, (img) => set((d) => (d.work.pieces[i].img = img)))} />
+                <ImageSlot
+                  img={w.img}
+                  busy={uploading === `work${i}`}
+                  onFile={(f) => upload(`work${i}`, f, (img) => set((d) => (d.work.pieces[i].img = img)))}
+                  onFocus={(focus) => set((d) => (d.work.pieces[i].img.focus = focus))}
+                />
                 <div style={{ display: 'grid', gap: 12 }}>
                   <Pair label="Title" v={w.title} on={(v) => set((d) => (d.work.pieces[i].title = v))} />
                   <Pair label="Type and year" v={w.meta} on={(v) => set((d) => (d.work.pieces[i].meta = v))} />
@@ -231,12 +242,58 @@ function Pair({ label, v, on, area }: { label: string; v: Bi; on: (v: Bi) => voi
   );
 }
 
-function ImageSlot({ img, busy, onFile }: { img: Img; busy: boolean; onFile: (f: File | undefined) => void }) {
+function ImageSlot({
+  img,
+  busy,
+  onFile,
+  onFocus,
+}: {
+  img: Img;
+  busy: boolean;
+  onFile: (f: File | undefined) => void;
+  onFocus?: (f: Focus) => void;
+}) {
+  const thumb = isMediaSrc(img.src) ? mediaUrl(img.src, 640) : img.src;
+  const replace = (
+    <input type="file" accept="image/*" hidden onChange={(e) => onFile(e.target.files?.[0])} />
+  );
+  if (!onFocus)
+    return (
+      <label className="im" style={{ cursor: 'pointer' }} title="Replace image">
+        <img src={thumb} alt="" style={{ opacity: busy ? 0.3 : 1 }} />
+        {replace}
+      </label>
+    );
+
+  const f = img.focus ?? { x: 50, y: 50 };
+  const pick = (e: React.MouseEvent<HTMLButtonElement>) => {
+    const r = e.currentTarget.getBoundingClientRect();
+    onFocus({ x: Math.round(((e.clientX - r.left) / r.width) * 100), y: Math.round(((e.clientY - r.top) / r.height) * 100) });
+  };
   return (
-    <label className="im" style={{ cursor: 'pointer' }} title="Replace image">
-      <img src={img.src} alt="" style={{ opacity: busy ? 0.3 : 1 }} />
-      <input type="file" accept="image/*" hidden onChange={(e) => onFile(e.target.files?.[0])} />
-    </label>
+    <div className="slot">
+      <button
+        type="button"
+        className="focus"
+        style={{ aspectRatio: `${img.w || 3} / ${img.h || 2}` }}
+        title="Click the part of the photo that must stay in frame"
+        aria-label="Set focus point"
+        onClick={pick}
+      >
+        <img src={thumb} alt="" style={{ opacity: busy ? 0.3 : 1 }} />
+        <span className="dot" style={{ left: `${f.x}%`, top: `${f.y}%` }} />
+      </button>
+      <div className="crops" aria-hidden="true">
+        <span title="Phone">
+          <img src={thumb} alt="" style={{ objectPosition: focusPosition(img.focus) }} />
+        </span>
+        <small>Phone crop</small>
+      </div>
+      <label className="pill quiet tiny" style={{ cursor: 'pointer' }}>
+        {busy ? 'Uploading…' : 'Replace'}
+        {replace}
+      </label>
+    </div>
   );
 }
 

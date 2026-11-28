@@ -225,3 +225,15 @@ td.t{white-space:nowrap;color:var(--mute);font-variant-numeric:tabular-nums}
 .portrait .ph img{width:100%;height:100%;object-fit:cover;display:block}
 .covers{display:grid;grid-template-columns:repeat(auto-fill,minmax(90px,1fr));gap:8px;max-height:320px;overflow:auto;padding:4px}
 .statusline{font-size:13px;color:var(--mute);margin-top:6px}
+/* focus point picker (site editor) */
+.item:has(.slot){grid-template-columns:180px minmax(0,1fr) auto}
+.slot{display:grid;grid-template-columns:auto minmax(0,1fr);gap:8px 10px;align-items:center}
+.slot .focus{grid-column:1/-1;position:relative;display:block;width:100%;padding:0;border:0;border-radius:3px;overflow:hidden;background:#1a1a1a;cursor:crosshair}
+.slot .focus img{width:100%;height:100%;object-fit:contain;display:block}
+.slot .dot{position:absolute;width:16px;height:16px;margin:-8px 0 0 -8px;border-radius:50%;border:2px solid #fff;box-shadow:0 0 0 1px #0009,inset 0 0 0 1px #0009;pointer-events:none}
+.slot .crops{display:flex;align-items:center;gap:8px}
+.slot .crops span{display:block;width:30px;aspect-ratio:390/560;border-radius:2px;overflow:hidden;background:#1a1a1a;box-shadow:0 0 0 1px #3a3a3a}
+.slot .crops img{width:100%;height:100%;object-fit:cover;display:block}
+.slot .crops small{font-size:12px;color:var(--mute);line-height:1.2}
+.pill.tiny{grid-column:1/-1;justify-self:start;min-height:30px;padding:4px 12px;font-size:13px}
+@media(max-width:600px){.item:has(.slot){grid-template-columns:minmax(0,1fr)}.item:has(.slot) .slot{max-width:260px}}
