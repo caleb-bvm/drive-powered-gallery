@@ -1,9 +1,18 @@
 /** Editable main-page content. Spanish is required; empty English falls back to Spanish. */
 
+/** Point of interest in percent (0 to 100 from the left and top), kept in frame when the photo is cropped. */
+export interface Focus {
+  x: number;
+  y: number;
+}
+
 export interface Img {
   src: string;
   w: number;
   h: number;
+  /** Tiny blurred preview (data URL) shown while the photo loads. */
+  blur?: string;
+  focus?: Focus;
 }
 
 export interface Bi {

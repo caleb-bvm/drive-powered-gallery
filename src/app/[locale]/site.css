@@ -274,8 +274,9 @@ img {
 /* ---- hero --------------------------------------------------------------- */
 .hero {
   position: relative;
-  height: min(100svh, 980px);
-  min-height: 560px;
+  /* Never taller than a 3:2 frame, so camera-ratio photos keep their width on
+     wide screens; full screen at most; 560px floor for the title on phones. */
+  height: clamp(560px, 66.667vw, 100svh);
   overflow: hidden;
   background: #000;
 }
@@ -290,6 +291,7 @@ img {
 }
 .slide img {
   object-fit: cover;
+  /* object-position comes from each photo's focus point */
 }
 .slide.on {
   opacity: 1;

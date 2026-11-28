@@ -56,4 +56,5 @@ export function getStore(): ObjectStore {
 export const previewKey = (albumId: string, photoId: string, size: 'sm' | 'lg', version: number) =>
   `albums/${albumId}/${photoId}-${version}-${size}.webp`;
 
-export const mediaKey = (id: string, size: 'lg' | 'sm') => `media/${id}-${size}.webp`;
+/** Site images: `lg` and `sm` WebP (Studio thumbnails, older uploads) plus one file per width and format. */
+export const mediaKey = (id: string, size: 'lg' | 'sm' | number, format: 'webp' | 'avif' = 'webp') => `media/${id}-${size}.${format}`;

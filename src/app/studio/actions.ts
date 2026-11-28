@@ -3,7 +3,6 @@
 import { after } from 'next/server';
 import { redirect } from 'next/navigation';
 import { revalidatePath } from 'next/cache';
-import sharp from 'sharp';
 import { requireAdmin, authMethods, passwordMatches, setAdmin, clearAdmin } from '@/lib/admin';
 import { getDrive } from '@/lib/drive';
 import {
@@ -28,6 +27,8 @@ import type { Img, SiteContent } from '@/lib/content-types';
 import { getDb, schema } from '@/lib/db';
 import { getStore, mediaKey } from '@/lib/storage';
 import { randomId } from '@/lib/crypto';
+import { makeSiteVariants } from '@/lib/images';
+import { SITE_WIDTHS } from '@/lib/site-images';
 import { env } from '@/lib/env';
 import { clientIp } from '@/lib/request';
 import { isBlocked, recordAttempt } from '@/lib/ratelimit';
@@ -263,7 +264,7 @@ export async function saveSite(content: SiteContent): Promise<Result> {
   }
 }
 
-/** Upload an image for the public site: resized for the web, metadata stripped. */
+/** Upload an image for the public site: encoded at every web size (AVIF + WebP), metadata stripped. */
 export async function uploadImage(form: FormData): Promise<Result<{ img: Img }>> {
   try {
     await requireAdmin();
@@ -271,15 +272,21 @@ export async function uploadImage(form: FormData): Promise<Result<{ img: Img }>>
     if (!(file instanceof File) || !file.size) return { ok: false, error: 'Choose an image.' };
     if (file.size > 60 * 1024 ** 2) return { ok: false, error: 'That file is over 60 MB.' };
     const buf = Buffer.from(await file.arrayBuffer());
-    const base = sharp(buf, { failOn: 'none' }).rotate();
-    const lg = await base.clone().resize({ width: 2400, height: 2400, fit: 'inside', withoutEnlargement: true }).webp({ quality: 84 }).toBuffer({ resolveWithObject: true });
-    const sm = await base.clone().resize({ width: 800, height: 800, fit: 'inside', withoutEnlargement: true }).webp({ quality: 76 }).toBuffer();
+    const v = await makeSiteVariants(buf, SITE_WIDTHS);
     const id = randomId(9);
-    await getStore().put(mediaKey(id, 'lg'), lg.data, 'image/webp');
-    await getStore().put(mediaKey(id, 'sm'), sm, 'image/webp');
+    const store = getStore();
+    for (const f of v.files) {
+      await store.put(mediaKey(id, f.width, 'avif'), f.avif, 'image/avif');
+      await store.put(mediaKey(id, f.width, 'webp'), f.webp, 'image/webp');
+    }
+    // Fixed names for the Studio thumbnails and anything that still asks for lg / sm.
+    const largest = v.files[v.files.length - 1];
+    const small = v.files[0];
+    await store.put(mediaKey(id, 'lg'), largest.webp, 'image/webp');
+    await store.put(mediaKey(id, 'sm'), small.webp, 'image/webp');
     const db = await getDb();
-    await db.insert(schema.media).values({ id, width: lg.info.width, height: lg.info.height });
-    return { ok: true, img: { src: `/api/media/${id}/lg`, w: lg.info.width, h: lg.info.height } };
+    await db.insert(schema.media).values({ id, width: v.width, height: v.height });
+    return { ok: true, img: { src: `/api/media/${id}/lg`, w: v.width, h: v.height, blur: v.blur } };
   } catch (e) {
     return fail(e);
   }

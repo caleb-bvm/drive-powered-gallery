@@ -11,10 +11,12 @@ const config: NextConfig = {
   images: {
     localPatterns: [{ pathname: '/sample/**' }, { pathname: '/api/media/**' }],
     formats: ['image/avif', 'image/webp'],
+    // Same steps as the sizes encoded for Studio uploads (src/lib/site-images.ts)
+    deviceSizes: [640, 960, 1280, 1920, 2560, 3200],
     qualities: [75, 80, 82],
   },
   experimental: {
-    serverActions: { bodySizeLimit: '30mb' },
+    serverActions: { bodySizeLimit: '64mb' },
   },
   async headers() {
     return [

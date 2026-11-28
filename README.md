@@ -82,6 +82,13 @@ each original once and stores 2400 px and 640 px WebP previews with all metadata
 included) removed. The job is resumable: *Sync from Drive* adds new photos, drops
 deleted ones and redoes edited ones (Drive md5 changed).
 
+**Main-page images.** Photos uploaded in the Studio (hero, selected work, portrait) are
+encoded once at upload: 640 to 3200 px wide, AVIF and WebP, plus a tiny blurred
+placeholder. Pages pick the size that fits the screen and the server never resizes on
+request. The hero is never taller than a 3:2 frame, so camera-ratio photos keep almost
+their full width on wide screens; click a photo in the Studio to set the point that
+stays in frame when it is cropped (phones, portrait frames).
+
 **Downloads.** Originals stream from Drive through the server; the browser never sees a
 Drive link or file ID. ZIPs stream as they are built, split into ~2 GB parts, with
 chapter folders inside.
